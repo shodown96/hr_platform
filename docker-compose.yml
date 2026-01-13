@@ -1,0 +1,69 @@
+services:
+  # PostgreSQL for Auth Service
+  auth_db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+
+  # PostgreSQL for Employee Service
+  employee_db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: employee_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - employee_db_data:/var/lib/postgresql/data
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672" # AMQP port
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # Auth Service
+  auth_service:
+    build: ./auth-service
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@auth_db:5432/auth_db
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      - auth_db
+      - rabbitmq
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Employee Service
+  employee_service:
+    build: ./employee-service
+    ports:
+      - "8002:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@employee_db:5432/employee_db
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      AUTH_SERVICE_URL: http://auth_service:8000
+    depends_on:
+      - employee_db
+      - rabbitmq
+      - auth_service
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  auth_db_data:
+  employee_db_data:
+  rabbitmq_data:

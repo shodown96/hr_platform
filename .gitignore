@@ -1,0 +1,11 @@
+.env
+!.env.example
+*.db
+.venv
+venv
+*.pyc
+logs
+crudadmin_data
+.DS_Store
+deploy-to-lambda.yml
+.pytest_cache
