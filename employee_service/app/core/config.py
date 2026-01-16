@@ -151,7 +151,7 @@ class RabbitMQSettings(BaseSettings):
 
 class MicroserviceSettings(BaseSettings):
     # Auth Service
-    AUTH_SERVICE_URL: str = "http://localhost:8001"
+    AUTH_SERVICE_URL: str = "http://localhost:8000"
 
 
 class Settings(

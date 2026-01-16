@@ -20,6 +20,7 @@ from app.services.permissions import PermissionService
 from app.services.roles import RoleService
 from app.schemas.auth import TokenType
 from app.models.auth import User
+from app.messaging.rabbitmq import RabbitMQDep
 
 router = APIRouter()
 
@@ -78,7 +79,6 @@ async def sign_in(db: SessionDep, form_data: OAuth2PasswordRequestForm = Depends
     )
     print(user.email)
     return TokenResponse(
-        token_type=TokenType.ACCESS,
         access_token=access_token, 
         user=UserResponse.model_validate(user)
     )
@@ -115,12 +115,13 @@ async def get_role(
 
 @router.post("/users/assign-role", status_code=status.HTTP_200_OK)
 async def assign_role_to_user(
-    request: AssignRoleRequest,
     db: SessionDep,
+    rabbitmq: RabbitMQDep,
+    request: AssignRoleRequest,
     current_user: User = Depends(get_current_superuser),
 ):
     """Assign role to user"""
-    user_role = await RoleService.assign_role_to_user(db, request.user_id, request.role_id)
+    user_role = await RoleService.assign_role_to_user(db, rabbitmq, request.user_id, request.role_id)
     return {"message": "Role assigned successfully"}
 
 

@@ -26,7 +26,6 @@ class JWTManager:
         self,
         user_id: str,
         username: str,
-        employee_id: str,
         is_superuser: bool,
         permissions: List[str],
         expires_delta: Optional[timedelta] = None,
@@ -35,7 +34,6 @@ class JWTManager:
         to_encode = {
             "sub": user_id,
             "username": username,
-            "employee_id": employee_id,
             "is_superuser": is_superuser,
             "permissions": permissions,
         }
@@ -58,7 +56,6 @@ class JWTManager:
             token_data = TokenData(
                 user_id=payload.get("sub"),
                 username=payload.get("username"),
-                employee_id=payload.get("employee_id"),
                 is_superuser=payload.get("is_superuser", False),
                 permissions=payload.get("permissions", []),
                 exp=datetime.fromtimestamp(payload.get("exp")),

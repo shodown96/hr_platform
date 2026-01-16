@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.employment import Department, Employee, Position
-from app.services.event_publisher import EventPublisher
+from app.messaging.event_publisher import EventPublisher
 from app.messaging.rabbitmq import RabbitMQClient
 
 class EmployeeService:

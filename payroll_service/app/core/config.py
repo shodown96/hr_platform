@@ -65,7 +65,7 @@ class PostgresSettings(DatabaseSettings):
     POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_PORT: int = 5432
-    POSTGRES_DB: str = "hr_employee"
+    POSTGRES_DB: str = "hr_payroll"
     POSTGRES_SYNC_PREFIX: str = "postgresql://"
     POSTGRES_ASYNC_PREFIX: str = "postgresql+asyncpg://"
     POSTGRES_URL: str | None = None
@@ -151,7 +151,7 @@ class RabbitMQSettings(BaseSettings):
 
 class MicroserviceSettings(BaseSettings):
     # Auth Service
-    AUTH_SERVICE_URL: str = "http://localhost:8001"
+    AUTH_SERVICE_URL: str = "http://localhost:8000"
 
 
 class Settings(

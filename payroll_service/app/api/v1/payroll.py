@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from schemas.payroll import (
     EmployeeSalaryCreate,
     EmployeeSalaryResponse,
-    EmployeeSalaryUpdate,
     PayrollRecordCreate,
     PayrollRecordResponse,
     PayrollRecordUpdate,
@@ -18,7 +17,7 @@ from schemas.payroll import (
 
 from hr_shared.auth.jwt_utils import TokenData
 
-router = APIRouter(prefix="/api/v1/payroll", tags=["payroll"])
+router = APIRouter()
 
 
 # Employee Salary Endpoints

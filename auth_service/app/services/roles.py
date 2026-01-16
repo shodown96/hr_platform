@@ -1,8 +1,11 @@
 from typing import Optional
 
+from app.messaging.event_publisher import AuthEventPublisher
+from app.messaging.rabbitmq import RabbitMQClient
 from app.models.auth import Role, RolePermission, UserRole
 from app.schemas.auth import RoleCreate
 from fastapi import HTTPException, status
+from shared.cache.permissions import get_permission_cache
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -41,7 +44,7 @@ class RoleService:
 
     @staticmethod
     async def assign_role_to_user(
-        db: AsyncSession, user_id: str, role_id: str
+        db: AsyncSession, rabbitmq: RabbitMQClient, user_id: str, role_id: str
     ) -> UserRole:
         result = await db.execute(
             select(UserRole).where(
@@ -62,10 +65,17 @@ class RoleService:
         await db.commit()
         await db.refresh(user_role)
 
+        # Publish event
+        await AuthEventPublisher.publish_role_assigned(
+            rabbitmq, user_id, role_id, user_role.role.name
+        )
+
         return user_role
 
     @staticmethod
-    async def remove_role_from_user(db: AsyncSession, user_id: str, role_id: str):
+    async def remove_role_from_user(
+        db: AsyncSession, rabbitmq: RabbitMQClient, user_id: str, role_id: str
+    ):
         result = await db.execute(
             select(UserRole).where(
                 UserRole.user_id == user_id,
@@ -82,3 +92,13 @@ class RoleService:
 
         await db.delete(user_role)
         await db.commit()
+
+        # Publish event
+        if user_role.role:
+            await AuthEventPublisher.publish_role_removed(
+                rabbitmq, user_id, role_id, user_role.role.name
+            )
+
+        # Invalidate cache
+        cache = await get_permission_cache()
+        await cache.invalidate_all_for_user(user_id)
