@@ -145,9 +145,6 @@ app.add_middleware(
     allow_headers=settings.CORS_HEADERS,
 )
 
-# Include routers
-app.include_router(api_router)
-
 
 @app.get("/", tags=["Base"])
 async def get_base_endpoint(db: SessionDep, redis: cache.RedisDep):
@@ -160,3 +157,17 @@ async def get_base_endpoint(db: SessionDep, redis: cache.RedisDep):
             "redis": f"{'un'if not redis_health else ''}healthy",
         },
     }
+
+
+# Include routers
+app.include_router(api_router)
+
+# from fastapi import Request
+# from fastapi.exceptions import ResponseValidationError
+# from fastapi.responses import JSONResponse
+# @app.exception_handler(ResponseValidationError)
+# async def response_validation_handler(request: Request, exc: ResponseValidationError):
+#     return JSONResponse(
+#         status_code=500,
+#         content={"detail": exc.errors()},
+#     )

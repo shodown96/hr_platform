@@ -68,7 +68,7 @@ async def test_user_gets_role_permissions_in_token(
 
     for resource, action in permissions:
         res = await client.post(
-            "/api/v1/auth/permissions",
+            "/api/v1/auth/roles/permissions",
             json={
                 "resource": resource,
                 "action": action,
@@ -112,7 +112,7 @@ async def test_user_gets_role_permissions_in_token(
 
     print("\n[STEP 5] Assign role to HR user")
     assign_res = await client.post(
-        "/api/v1/auth/users/assign-role",
+        "/api/v1/auth/roles/assign-role-to-user",
         json={
             "user_id": user_id,
             "role_id": role_id,
@@ -172,7 +172,7 @@ async def test_user_gets_role_permissions_in_token(
 
     print("\n[STEP 9] Admin creates a normal user")
     user_create_res = await client.post(
-        "/api/v1/auth/create-user",
+        "/api/v1/users/create-user",
         json={
             "username": settings.USER_USERNAME,
             "email": settings.USER_EMAIL,

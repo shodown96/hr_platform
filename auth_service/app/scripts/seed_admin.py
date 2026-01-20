@@ -1,33 +1,30 @@
+import argparse
 import asyncio
 
 from app.core.db import AsyncSession, local_session
-from app.services.auth import AuthService
 from app.schemas.auth import UserCreate
+from app.services.auth import AuthService
+from app.core.config import settings
 
 # import logging
 # logging.basicConfig(level=logging.INFO)
 # logger = logging.getLogger(__name__)
 
+
 async def seed_admin(db: AsyncSession):
     print("Seeding admin user")
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--reset", action="store_true", help="Delete existing admin and re-seed"
+    )
+    args = parser.parse_args()
+    from app.models.auth import Role, User, UserRole
+    from sqlalchemy import delete, select
 
-    from app.models.auth import User, Role, UserRole
-    from sqlalchemy import select,delete
-    admin_username = "admin"
-    admin_email = "admin@system.com"
-    admin_password = "AdminPass123!"
+    admin_username = settings.ADMIN_USERNAME
+    admin_email = settings.ADMIN_EMAIL
+    admin_password = settings.ADMIN_PASSWORD
 
-    # stmt = select(User).where(User.username == admin_username)
-    # result = await db.execute(stmt)
-    # admin = result.scalar_one_or_none()
-    # user_role_stmt = delete(UserRole).where(
-    #     UserRole.user_id == admin.id,
-    # )
-    # user_role_result = await db.execute(user_role_stmt)
-    
-    # await db.execute(delete(User).where(User.username == admin_username))
-    # await db.commit()
-    
     UserCreate.model_validate(
         {
             "username": admin_username,
@@ -40,6 +37,17 @@ async def seed_admin(db: AsyncSession):
     stmt = select(User).where(User.username == admin_username)
     result = await db.execute(stmt)
     admin = result.scalar_one_or_none()
+
+    if args.reset:
+        print("Resetting admin user")
+        # TODO: USE on cascade delete instead
+        # user_role_stmt = delete(UserRole).where(
+        #     UserRole.user_id == admin.id,
+        # )
+        # user_role_result = await db.execute(user_role_stmt)
+        await db.execute(delete(User).where(User.username == admin_username))
+        await db.commit()
+        admin = None
 
     if not admin:
         admin = User(

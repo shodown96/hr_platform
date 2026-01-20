@@ -174,11 +174,9 @@ async def get_my_profile(
     Get current user's employee profile
     Any authenticated user can access their own profile
     """
-    print(current_user.employee_id)
-    employee = await EmployeeService.get_employee(
-        db, current_user.employee_id, include_relations=True
+    employee = await EmployeeService.get_employee_by_user_id(
+        db, current_user.user_id, include_relations=True
     )
-    print(current_user.employee_id)
 
     if not employee:
         raise HTTPException(

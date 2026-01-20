@@ -107,7 +107,8 @@ class RoleResponse(RoleBase):
 
 
 class RoleWithPermissions(RoleResponse):
-    permissions: List["PermissionResponse"]
+    model_config = ConfigDict(from_attributes=True)
+    permissions: Optional[List["PermissionResponse"]]
 
 
 # Permission Schemas
@@ -180,3 +181,17 @@ class AssignRoleRequest(BaseModel):
 class AssignPermissionRequest(BaseModel):
     role_id: str
     permission_id: str
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class VerifyResetRequest(BaseModel):
+    email: EmailStr
+    otp_code: str = Field(..., min_length=6, max_length=6)
+    new_password: str = Field(..., min_length=8)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str

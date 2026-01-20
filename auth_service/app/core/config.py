@@ -19,6 +19,7 @@ class CryptSettings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    OTP_EXPIRE_MINUTES: int = 10
 
 
 class DatabaseSettings(BaseSettings):
@@ -83,24 +84,23 @@ class SampleUserSettings(BaseSettings):
     ADMIN_EMAIL: str = "admin@admin.com"
     ADMIN_USERNAME: str = "admin"
     ADMIN_PASSWORD: str = "!Ch4ng3Th1sP4ssW0rd!"
-    
+
     HR_NAME: str = "hr manager"
     HR_EMAIL: str = "hr@company.com"
     HR_USERNAME: str = "hrmanager"
     HR_PASSWORD: str = "!Ch4ng3Th1sP4ssW0rd!"
-    
+
     USER_NAME: str = "user"
     USER_EMAIL: str = "user@user.com"
     USER_USERNAME: str = "user"
     USER_PASSWORD: str = "!Ch4ng3Th1sP4ssW0rd!"
-    
+
     EMPLOYEE_FIRST_NAME: str = "emp"
     EMPLOYEE_LAST_NAME: str = "emp"
     EMPLOYEE_EMAIL: str = "emp@employee.com"
     EMPLOYEE_USERNAME: str = "emp"
     EMPLOYEE_PASSWORD: str = "!Ch4ng3Th1sP4ssW0rd!"
     EMPLOYEE_CODE: str = "EMP001"
-    
 
 
 class TestSettings(BaseSettings):

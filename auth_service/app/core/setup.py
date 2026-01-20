@@ -30,7 +30,6 @@ from fastapi import APIRouter, Depends, FastAPI, responses
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
-
 from models import *  # noqa: F403
 
 
@@ -202,7 +201,6 @@ def create_application(
         )
 
     application = FastAPI(lifespan=lifespan, **kwargs)
-    application.include_router(router)
 
     if isinstance(settings, ClientSideCacheSettings):
         application.add_middleware(
@@ -264,5 +262,6 @@ def create_application(
 
             application.include_router(base_router)
             application.include_router(docs_router)
+    application.include_router(router)
 
     return application

@@ -1,7 +1,9 @@
-from datetime import UTC, datetime
+import random
+from datetime import UTC, datetime, timedelta
 from typing import List, Optional
 
-from app.models.base import BaseModel
+from app.models.base import BaseModel, BaseImmutableModel
+from app.core.config import settings
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -72,12 +74,12 @@ class UserRole(BaseModel):
 
     user_id: Mapped[str] = mapped_column(
         String(36),
-        ForeignKey("users.id"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
     role_id: Mapped[str] = mapped_column(
         String(36),
-        ForeignKey("roles.id"),
+        ForeignKey("roles.id", ondelete="CASCADE"),
         nullable=False,
     )
 
@@ -130,3 +132,20 @@ class RolePermission(BaseModel):
         DateTime(timezone=True),
         default_factory=lambda: datetime.now(UTC),
     )
+
+class VerificationToken(BaseImmutableModel):
+    """Simple verification token for password reset"""
+    __tablename__ = "verification_tokens"
+    
+    email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    otp_code: Mapped[str] = mapped_column(String(6), nullable=False)
+    
+    @staticmethod
+    def generate_otp() -> str:
+        """Generate 6-digit OTP"""
+        return str(random.randint(100000, 999999))
+    
+    def is_expired(self, expiry_minutes: int = settings.OTP_EXPIRE_MINUTES) -> bool:
+        """Check if OTP is expired (default 10 minutes)"""
+        expiry_time = self.created_at + timedelta(minutes=expiry_minutes)
+        return datetime.now(UTC) > expiry_time

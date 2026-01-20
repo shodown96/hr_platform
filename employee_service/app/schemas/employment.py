@@ -144,6 +144,6 @@ class EmployeeResponse(EmployeeBase):
 
 
 class EmployeeWithRelations(EmployeeResponse):
-    department: DepartmentResponse
-    position: PositionResponse
+    department: Optional[DepartmentResponse] = None
+    position: Optional[PositionResponse] = None
     manager: Optional[EmployeeResponse] = None

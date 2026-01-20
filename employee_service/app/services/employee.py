@@ -87,7 +87,7 @@ class EmployeeService:
         db: AsyncSession, employee_id: str, include_relations: bool = False
     ) -> Optional[Employee]:
         """Get employee by ID with optional relationships"""
-        stmt = select(Employee).where(Employee.employee_code == employee_id)
+        stmt = select(Employee).where(Employee.id == employee_id)
 
         if include_relations:
             stmt = stmt.options(
@@ -100,11 +100,35 @@ class EmployeeService:
         return result.scalar_one_or_none()
 
     @staticmethod
+    async def get_employee_by_user_id(
+        db: AsyncSession, user_id: str, include_relations: bool = False
+    ) -> Optional[Employee]:
+        """Get employee by ID with optional relationships"""
+        stmt = select(Employee).where(Employee.user_id == user_id)
+
+        if include_relations:
+            stmt = stmt.options(
+                selectinload(Employee.department),
+                selectinload(Employee.position),
+                selectinload(Employee.manager),
+            )
+
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+    
+    @staticmethod
     async def get_employee_by_code(
-        db: AsyncSession, employee_code: str
+        db: AsyncSession, employee_code: str, include_relations: bool = False
     ) -> Optional[Employee]:
         """Get employee by employee code"""
         stmt = select(Employee).where(Employee.employee_code == employee_code)
+
+        if include_relations:
+            stmt = stmt.options(
+                selectinload(Employee.department),
+                selectinload(Employee.position),
+                selectinload(Employee.manager),
+            )
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
 

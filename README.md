@@ -40,8 +40,8 @@ alembic current # to check things went smoothly
 ### Seed Data
 ```bash
 cd auth-service
-python -m app.scripts.seed_admin
-python -m app.scripts.seed_permissions
+python -m app.scripts.seed_permissions 
+python -m app.scripts.seed_admin # --reset (to reset the admin)
 ```
 
 ### 4. Run the server

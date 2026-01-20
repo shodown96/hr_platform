@@ -35,7 +35,6 @@ async def get_current_user_from_token(
     )
 
     # Validate token
-    print("yayyyy")
     token_data = jwt_manager.verify_token(token)
 
     if token_data is None:

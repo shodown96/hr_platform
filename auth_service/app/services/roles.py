@@ -1,14 +1,14 @@
-from typing import Optional
+from typing import Optional, List
 
 from app.messaging.event_publisher import AuthEventPublisher
 from app.messaging.rabbitmq import RabbitMQClient
 from app.models.auth import Role, RolePermission, UserRole
-from app.schemas.auth import RoleCreate
+from app.schemas.auth import RoleCreate, RoleWithPermissions, PermissionResponse
 from fastapi import HTTPException, status
 from shared.cache.permissions import get_permission_cache
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 
 class RoleService:
@@ -32,22 +32,71 @@ class RoleService:
         return role
 
     @staticmethod
-    async def get_role(db: AsyncSession, role_id: str) -> Optional[Role]:
+    async def get_roles(db: AsyncSession) -> List[RoleWithPermissions]:
+        result = await db.execute(
+            select(Role).options(
+                selectinload(Role.role_permissions).selectinload(
+                    RolePermission.permission
+                )
+            )
+        )
+        roles = result.scalars().all()
+        return [
+            RoleWithPermissions(
+                id=r.id,
+                name=r.name,
+                description=r.description,
+                created_at=r.created_at,
+                updated_at=r.updated_at,
+                permissions=[
+                    PermissionResponse.model_validate(rp.permission)
+                    for rp in r.role_permissions
+                ],
+            )
+            for r in roles
+        ]
+
+    @staticmethod
+    async def get_role(db: AsyncSession, role_id: str) -> Optional[RoleWithPermissions]:
         result = await db.execute(
             select(Role)
             .options(
-                joinedload(Role.role_permissions).joinedload(RolePermission.permission)
+                selectinload(Role.role_permissions).selectinload(
+                    RolePermission.permission
+                )
             )
             .where(Role.id == role_id)
         )
-        return result.scalar_one_or_none()
+        role = result.scalar_one_or_none()
+        if not role:
+            return None
+        return RoleWithPermissions(
+            id=role.id,
+            name=role.name,
+            description=role.description,
+            created_at=role.created_at,
+            updated_at=role.updated_at,
+            permissions=[
+                PermissionResponse.model_validate(rp.permission)
+                for rp in role.role_permissions
+            ],
+        )
 
     @staticmethod
     async def assign_role_to_user(
         db: AsyncSession, rabbitmq: RabbitMQClient, user_id: str, role_id: str
     ) -> UserRole:
+        # TEST
+        # await db.execute(
+        #     delete(UserRole).where(
+        #         UserRole.user_id == user_id,
+        #         UserRole.role_id == role_id,
+        #     )
+        # )
         result = await db.execute(
-            select(UserRole).where(
+            select(UserRole)
+            .options(selectinload(UserRole.role))
+            .where(
                 UserRole.user_id == user_id,
                 UserRole.role_id == role_id,
             )
@@ -64,10 +113,13 @@ class RoleService:
         db.add(user_role)
         await db.commit()
         await db.refresh(user_role)
-
+        
+        role_result = await db.execute(select(Role.name).where(Role.id == role_id))
+        role_name = role_result.scalar_one()
+        
         # Publish event
         await AuthEventPublisher.publish_role_assigned(
-            rabbitmq, user_id, role_id, user_role.role.name
+            rabbitmq, user_id, role_id, role_name
         )
 
         return user_role

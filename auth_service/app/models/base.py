@@ -2,11 +2,11 @@ import uuid
 from datetime import UTC, datetime
 
 from app.core.db import Base
-from sqlalchemy import DateTime, String, Boolean
+from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 
-class BaseModel(Base):
+class BaseImmutableModel(Base):
     __abstract__ = True
 
     id: Mapped[str] = mapped_column(
@@ -23,6 +23,10 @@ class BaseModel(Base):
         default_factory=lambda: datetime.now(UTC),
         init=False,
     )
+
+
+class BaseModel(BaseImmutableModel):
+    __abstract__ = True
 
     updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
