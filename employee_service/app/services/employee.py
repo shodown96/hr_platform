@@ -1,21 +1,22 @@
 from datetime import date
 from typing import List, Optional
 
-from fastapi import HTTPException, status
+from app.messaging.event_publisher import EventPublisher
+from app.messaging.rabbitmq import RabbitMQClient
+from app.models.employment import Department, Employee, Position
 from app.schemas.employment import EmployeeCreate, EmployeeUpdate
-from sqlalchemy import and_, or_, select, delete
+from fastapi import HTTPException, status
+from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.employment import Department, Employee, Position
-from app.messaging.event_publisher import EventPublisher
-from app.messaging.rabbitmq import RabbitMQClient
 
 class EmployeeService:
 
     @staticmethod
     async def create_employee(
-        db: AsyncSession, employee_data: EmployeeCreate
+        db: AsyncSession,
+        employee_data: EmployeeCreate,
     ) -> Employee:
         """Create a new employee"""
         # TEST
@@ -23,7 +24,7 @@ class EmployeeService:
         # await db.execute(delete(Position))
         # await db.execute(delete(Department))
         # await db.commit()
-        
+
         # Check if employee with same email or code exists
         stmt = select(Employee).where(
             or_(
@@ -42,22 +43,24 @@ class EmployeeService:
             )
 
         # Verify department exists
-        dept_stmt = select(Department).where(
-            Department.id == employee_data.department_id
-        )
-        dept_result = await db.execute(dept_stmt)
-        if not dept_result.scalar_one_or_none():
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Department not found"
+        if employee_data.position_id:
+            dept_stmt = select(Department).where(
+                Department.id == employee_data.department_id
             )
+            dept_result = await db.execute(dept_stmt)
+            if not dept_result.scalar_one_or_none():
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Department not found"
+                )
 
         # Verify position exists
-        pos_stmt = select(Position).where(Position.id == employee_data.position_id)
-        pos_result = await db.execute(pos_stmt)
-        if not pos_result.scalar_one_or_none():
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Position not found"
-            )
+        if employee_data.position_id:
+            pos_stmt = select(Position).where(Position.id == employee_data.position_id)
+            pos_result = await db.execute(pos_stmt)
+            if not pos_result.scalar_one_or_none():
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Position not found"
+                )
 
         # Verify manager exists if provided
         if employee_data.manager_id:
@@ -67,7 +70,11 @@ class EmployeeService:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail="Manager not found"
                 )
-
+        statement = select(func.count()).select_from(Employee)
+        result = await db.execute(statement)
+        count: int = result.scalar()
+        employee_data.employee_code = f"EMP{count:05}"
+        print("employee_data", employee_data)
         employee = Employee(**employee_data.model_dump())
         db.add(employee)
         await db.commit()

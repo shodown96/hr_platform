@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: f0b1328c98c1
+Revision ID: 90e7257013de
 Revises: 
-Create Date: 2026-01-08 12:36:50.247702
+Create Date: 2026-01-20 12:49:02.411806
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'f0b1328c98c1'
+revision: str = '90e7257013de'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -52,6 +52,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_positions_id'), 'positions', ['id'], unique=True)
     op.create_index(op.f('ix_positions_is_deleted'), 'positions', ['is_deleted'], unique=False)
     op.create_table('employees',
+    sa.Column('user_id', sa.String(length=36), nullable=False),
     sa.Column('employee_code', sa.String(length=50), nullable=False),
     sa.Column('first_name', sa.String(length=100), nullable=False),
     sa.Column('last_name', sa.String(length=100), nullable=False),
@@ -64,8 +65,8 @@ def upgrade() -> None:
     sa.Column('hire_date', sa.Date(), nullable=False),
     sa.Column('termination_date', sa.Date(), nullable=True),
     sa.Column('employment_type', sa.Enum('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN', name='employmenttype'), nullable=False),
-    sa.Column('department_id', sa.String(length=36), nullable=False),
-    sa.Column('position_id', sa.String(length=36), nullable=False),
+    sa.Column('department_id', sa.String(length=36), nullable=True),
+    sa.Column('position_id', sa.String(length=36), nullable=True),
     sa.Column('manager_id', sa.String(length=36), nullable=True),
     sa.Column('employment_status', sa.Enum('ACTIVE', 'ON_LEAVE', 'TERMINATED', 'SUSPENDED', name='employmentstatus'), nullable=False),
     sa.Column('id', sa.String(length=36), nullable=False),
@@ -78,7 +79,8 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['position_id'], ['positions.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
-    sa.UniqueConstraint('employee_code')
+    sa.UniqueConstraint('employee_code'),
+    sa.UniqueConstraint('user_id')
     )
     op.create_index(op.f('ix_employees_id'), 'employees', ['id'], unique=True)
     op.create_index(op.f('ix_employees_is_deleted'), 'employees', ['is_deleted'], unique=False)

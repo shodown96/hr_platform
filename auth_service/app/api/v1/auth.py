@@ -26,7 +26,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/sign-up", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+    "/sign-up", response_model=TokenResponse, status_code=status.HTTP_201_CREATED
 )
 async def sign_up(
     user_data: UserCreate,
@@ -34,8 +34,26 @@ async def sign_up(
     # dependencies=Depends(anonymous_only),
 ):
     """Sign up as a new user"""
+    
     user = await AuthService.create_user(db, user_data)
-    return user
+
+    # TODO: Add basic permissions to the user
+
+    # Get user permissions
+    permissions = await AuthService.get_user_permissions(db, str(user.id))
+
+    # Create access token
+    access_token = AuthService.create_access_token(
+        data={
+            "sub": str(user.id),
+            "username": user.username,
+            "is_superuser": user.is_superuser,
+            "permissions": permissions,
+        }
+    )
+    return TokenResponse(
+        access_token=access_token, user=UserResponse.model_validate(user)
+    )
 
 
 @router.post(
@@ -77,7 +95,6 @@ async def sign_in(db: SessionDep, form_data: OAuth2PasswordRequestForm = Depends
             "permissions": permissions,
         }
     )
-    print(user.email)
     return TokenResponse(
         access_token=access_token, 
         user=UserResponse.model_validate(user)

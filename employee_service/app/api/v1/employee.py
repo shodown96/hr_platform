@@ -4,6 +4,7 @@ from typing import List, Optional
 import httpx
 from app.core.db import SessionDep
 from app.core.dependencies.auth import check_permission, get_current_user_from_token
+from app.messaging.rabbitmq import RabbitMQDep
 from app.schemas.employment import (
     EmployeeCreate,
     EmployeeResponse,
@@ -12,7 +13,6 @@ from app.schemas.employment import (
 )
 from app.services.employee import EmployeeService
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from app.messaging.rabbitmq import RabbitMQDep
 from shared.auth.jwt_utils import TokenData
 
 router = APIRouter()
@@ -25,6 +25,22 @@ async def create_employee(
     current_user=Depends(check_permission("employee:write")),
 ):
     """Create a new employee"""
+    employee = await EmployeeService.create_employee(db, employee_data)
+    return employee
+
+
+@router.post(
+    "/sign-up", response_model=EmployeeResponse, status_code=status.HTTP_201_CREATED
+)
+async def create_employee(
+    employee_data: EmployeeCreate,
+    db: SessionDep,
+    current_user: TokenData = Depends(get_current_user_from_token),
+):
+    """Create employee details for just signed up user"""
+    # payload = employee_data.model_copy(update={"user_id": current_user.user_id})
+    # employee = await EmployeeService.create_employee(db, payload)
+    employee_data.user_id = current_user.user_id
     employee = await EmployeeService.create_employee(db, employee_data)
     return employee
 
@@ -105,6 +121,7 @@ async def terminate_employee(
     return employee
 
 
+# TODO: The correct endpoint for full signup on both auth and employee service
 @router.post(
     "/with-account",
     response_model=EmployeeResponse,
@@ -162,7 +179,6 @@ async def get_my_profile(
         db, current_user.employee_id, include_relations=True
     )
     print(current_user.employee_id)
-    
 
     if not employee:
         raise HTTPException(

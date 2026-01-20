@@ -40,7 +40,10 @@ class Department(BaseModel):
 
     # Relationships
     parent_department: Mapped[Optional["Department"]] = relationship(
-        "Department", remote_side="Department.id", back_populates="sub_departments", init=False
+        "Department",
+        remote_side="Department.id",
+        back_populates="sub_departments",
+        init=False,
     )
     sub_departments: Mapped[List["Department"]] = relationship(
         "Department", back_populates="parent_department", init=False
@@ -75,7 +78,7 @@ class Position(BaseModel):
 class Employee(BaseModel):
     __tablename__ = "employees"
 
-    user_id: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
+    user_id: Mapped[str] = mapped_column(String(36), unique=True, nullable=False)
     employee_code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -90,11 +93,11 @@ class Employee(BaseModel):
     employment_type: Mapped[EmploymentType] = mapped_column(
         Enum(EmploymentType), nullable=False
     )
-    department_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("departments.id"), nullable=False
+    department_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("departments.id"), nullable=True
     )
-    position_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("positions.id"), nullable=False
+    position_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("positions.id"), nullable=True
     )
     manager_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("employees.id"), nullable=True
@@ -104,7 +107,9 @@ class Employee(BaseModel):
     department: Mapped["Department"] = relationship(
         "Department", back_populates="employees", init=False
     )
-    position: Mapped["Position"] = relationship("Position", back_populates="employees", init=False)
+    position: Mapped["Position"] = relationship(
+        "Position", back_populates="employees", init=False
+    )
     manager: Mapped[Optional["Employee"]] = relationship(
         "Employee", remote_side="Employee.id", back_populates="subordinates", init=False
     )

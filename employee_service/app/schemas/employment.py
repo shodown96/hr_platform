@@ -80,25 +80,35 @@ class PositionResponse(PositionBase):
 
 # Employee Schemas
 class EmployeeBase(BaseModel):
-    user_id: str
-    employee_code: str = Field(..., min_length=3, max_length=50)
-    first_name: str = Field(..., min_length=1, max_length=100)
-    last_name: str = Field(..., min_length=1, max_length=100)
-    middle_name: Optional[str] = None
-    email: EmailStr
-    phone_number: Optional[str] = None
-    date_of_birth: Optional[date] = None
-    gender: Optional[GenderEnum] = None
-    address: Optional[dict] = None
+    user_id: str = Field(example="550e8400-e29b-41d4-a716-446655440000")
+    employee_code: str = Field(min_length=3, max_length=50, example="EMP001")
+    first_name: str = Field(min_length=1, max_length=100, example="John")
+    last_name: str = Field(min_length=1, max_length=100, example="Doe")
+    middle_name: Optional[str] = Field(None, example="Michael")
+    email: EmailStr = Field(example="john.doe@company.com")
+    phone_number: Optional[str] = Field(None, example="+1-555-123-4567")
+    date_of_birth: Optional[date] = Field(None, example="1990-05-15")
+    gender: Optional[GenderEnum] = Field(None, example="male")
+    address: Optional[dict] = Field(
+        None,
+        example={
+            "street": "123 Main Street",
+            "city": "New York",
+            "state": "NY",
+            "postal_code": "10001",
+            "country": "USA",
+        },
+    )
 
 
 class EmployeeCreate(EmployeeBase):
-    hire_date: date
-    employment_type: EmploymentTypeEnum
-    department_id: str
-    position_id: str
-    manager_id: Optional[str] = None
-    termination_date: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+    hire_date: date = Field(example="2026-01-20")
+    employment_type: EmploymentTypeEnum = Field(example="full_time")
+    department_id: Optional[str] = Field(None)
+    position_id: Optional[str] = Field(None)
+    manager_id: Optional[str] = Field(None)
+    termination_date: Optional[date] = Field(None, example="2027-12-31")
 
 
 class EmployeeUpdate(BaseModel):
@@ -126,8 +136,8 @@ class EmployeeResponse(EmployeeBase):
     termination_date: Optional[date]
     employment_status: EmploymentStatusEnum
     employment_type: EmploymentTypeEnum
-    department_id: str
-    position_id: str
+    department_id: Optional[str]
+    position_id: Optional[str]
     manager_id: Optional[str]
     created_at: datetime
     updated_at: datetime
