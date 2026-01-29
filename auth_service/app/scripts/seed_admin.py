@@ -40,11 +40,6 @@ async def seed_admin(db: AsyncSession):
 
     if args.reset:
         print("Resetting admin user")
-        # TODO: USE on cascade delete instead
-        # user_role_stmt = delete(UserRole).where(
-        #     UserRole.user_id == admin.id,
-        # )
-        # user_role_result = await db.execute(user_role_stmt)
         await db.execute(delete(User).where(User.username == admin_username))
         await db.commit()
         admin = None

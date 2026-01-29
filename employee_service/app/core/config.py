@@ -5,7 +5,8 @@ from pydantic import SecretStr, computed_field
 
 
 class AppSettings(BaseSettings):
-    APP_NAME: str = "FastAPI app"
+    APP_NAME: str = "Employee Service"
+    SERVICE_NAME: str = "employee_service"
     APP_DESCRIPTION: str | None = None
     APP_VERSION: str | None = None
     LICENSE_NAME: str | None = None
@@ -83,17 +84,17 @@ class SampleUserSettings(BaseSettings):
     ADMIN_EMAIL: str = "admin@admin.com"
     ADMIN_USERNAME: str = "admin"
     ADMIN_PASSWORD: str = "!Ch4ng3Th1sP4ssW0rd!"
-    
+
     HR_NAME: str = "hr manager"
     HR_EMAIL: str = "hr@company.com"
     HR_USERNAME: str = "hrmanager"
     HR_PASSWORD: str = "!Ch4ng3Th1sP4ssW0rd!"
-    
+
     USER_NAME: str = "user"
     USER_EMAIL: str = "user@user.com"
     USER_USERNAME: str = "user"
     USER_PASSWORD: str = "!Ch4ng3Th1sP4ssW0rd!"
-    
+
     EMPLOYEE_FIRST_NAME: str = "emp"
     EMPLOYEE_LAST_NAME: str = "emp"
     EMPLOYEE_EMAIL: str = "emp@employee.com"
@@ -146,7 +147,7 @@ class CORSSettings(BaseSettings):
 
 
 class RabbitMQSettings(BaseSettings):
-    RABBITMQ_URL: str = "amqp://guest:guest@localhost:5672/"
+    RABBITMQ_URL: str = "amqp://guest:guest@127.0.0.1:5672/"
 
 
 class MicroserviceSettings(BaseSettings):

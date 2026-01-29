@@ -34,6 +34,7 @@ from arq import create_pool
 from arq.connections import RedisSettings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.messaging.rabbitmq import get_rabbitmq_client
 
 
 # -------------- database --------------
@@ -78,13 +79,6 @@ async def start_event_consumer():
     asyncio.create_task(consumer.start())
 
 
-app = FastAPI(
-    title="HR Auth Service",
-    description="Authentication and Authorization Microservice",
-    version="1.0.0",
-)
-
-
 def lifespan_factory(
     settings: (
         DatabaseSettings
@@ -96,7 +90,7 @@ def lifespan_factory(
         | EnvironmentSettings
         | RabbitMQSettings
     ),
-    create_tables_on_start: bool = True,
+    create_tables_on_start: bool = False,
 ) -> Callable[[FastAPI], _AsyncGeneratorContextManager[Any]]:
     """Factory to create a lifespan async context manager for a FastAPI app."""
 
@@ -120,6 +114,7 @@ def lifespan_factory(
                 await create_tables()
 
             if isinstance(settings, RabbitMQSettings):
+                await get_rabbitmq_client()
                 await start_event_consumer()
 
             initialization_complete.set()
@@ -134,6 +129,15 @@ def lifespan_factory(
                 await close_redis_queue_pool()
 
     return lifespan
+
+
+
+app = FastAPI(
+    title="HR Auth Service",
+    description="Authentication and Authorization Microservice",
+    version="1.0.0",
+    lifespan=lifespan_factory(settings),
+)
 
 
 # CORS

@@ -1,8 +1,10 @@
+# employee_service/app/messaging/auth_event_consumer.py
 import json
 
 import aio_pika
-from shared.cache.permissions import get_permission_cache
 from app.core.config import settings
+from shared.cache.permissions import get_permission_cache
+
 
 class AuthEventConsumer:
     """
@@ -17,26 +19,23 @@ class AuthEventConsumer:
 
     async def start(self):
         """Start consuming auth events"""
+        print("start consumer")
         self.connection = await aio_pika.connect_robust(self.rabbitmq_url)
         self.channel = await self.connection.channel()
 
-        # Declare exchange
         exchange = await self.channel.declare_exchange(
             "auth_events", aio_pika.ExchangeType.TOPIC, durable=True
         )
 
-        # Declare queue (unique per service)
         queue = await self.channel.declare_queue(
-            f"{settings.SERVICE_NAME}_auth_events",  # e.g., "employee_service_auth_events"
+            f"{settings.SERVICE_NAME}_auth_events",
             durable=True,
         )
 
-        # Bind to permission/role events
         await queue.bind(exchange, routing_key="user.permissions.#")
         await queue.bind(exchange, routing_key="user.role.#")
         await queue.bind(exchange, routing_key="user.deactivated")
 
-        # Start consuming
         await queue.consume(self.process_message)
         print(f"✅ {settings.SERVICE_NAME}: Listening for auth events")
 
@@ -67,7 +66,6 @@ class AuthEventConsumer:
         print(f"   Removed: {event_data.get('removed_permissions', [])}")
         print(f"   Added: {event_data.get('added_permissions', [])}")
 
-        # Invalidate cache - user will get fresh permissions on next request
         cache = await get_permission_cache()
         await cache.invalidate_all_for_user(user_id)
 
@@ -80,7 +78,6 @@ class AuthEventConsumer:
 
         print(f"🔄 Role '{role_name}' changed for user {user_id}")
 
-        # Invalidate cache
         cache = await get_permission_cache()
         await cache.invalidate_all_for_user(user_id)
 
@@ -92,7 +89,6 @@ class AuthEventConsumer:
 
         print(f"🚫 User {user_id} deactivated")
 
-        # Invalidate cache
         cache = await get_permission_cache()
         await cache.invalidate_all_for_user(user_id)
 

@@ -1,3 +1,4 @@
+# employee_service/app/messaging/rabbitmq.py
 import json
 from datetime import datetime
 from typing import Annotated, Any, Dict
@@ -19,7 +20,6 @@ class RabbitMQClient:
         self.connection = await aio_pika.connect_robust(self.rabbitmq_url)
         self.channel = await self.connection.channel()
 
-        # Declare exchange for employee events
         self.exchange = await self.channel.declare_exchange(
             "employee_events", aio_pika.ExchangeType.TOPIC, durable=True
         )

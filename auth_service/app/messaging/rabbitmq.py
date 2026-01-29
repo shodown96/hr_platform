@@ -1,3 +1,4 @@
+# auth_service/app/messaging/rabbitmq.py
 import json
 from datetime import datetime
 from typing import Annotated, Any, Dict
@@ -15,13 +16,13 @@ class RabbitMQClient:
         self.exchange = None
 
     async def connect(self):
-        """Establish connection to RabbitMQ"""
         self.connection = await aio_pika.connect_robust(self.rabbitmq_url)
         self.channel = await self.connection.channel()
 
-        # Declare exchange for employee events
         self.exchange = await self.channel.declare_exchange(
-            "employee_events", aio_pika.ExchangeType.TOPIC, durable=True
+            "auth_events",
+            aio_pika.ExchangeType.TOPIC,
+            durable=True,
         )
 
     async def close(self):

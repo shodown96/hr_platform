@@ -232,16 +232,17 @@ class AuthService:
         offset: int = 0,
         include_superusers: bool = False,
     ) -> List[UserWithRoles]:
+        stmt = select(User)
+        if not include_superusers:
+            stmt = stmt.where(User.is_superuser == False)
+            
         result = await db.execute(
-            select(User)
+            stmt
             .options(selectinload(User.user_roles).selectinload(UserRole.role))
             .limit(limit)
             .offset(offset)
             .order_by(User.created_at.desc())
         )
-
-        if not include_superusers:
-            stmt = stmt.where(User.is_superuser == False)
 
         users = result.scalars().all()
 

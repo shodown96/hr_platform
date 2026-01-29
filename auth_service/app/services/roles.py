@@ -87,12 +87,13 @@ class RoleService:
         db: AsyncSession, rabbitmq: RabbitMQClient, user_id: str, role_id: str
     ) -> UserRole:
         # TEST
-        # await db.execute(
-        #     delete(UserRole).where(
-        #         UserRole.user_id == user_id,
-        #         UserRole.role_id == role_id,
-        #     )
-        # )
+        await db.execute(
+            delete(UserRole).where(
+                UserRole.user_id == user_id,
+                UserRole.role_id == role_id,
+            )
+        )
+        await db.commit()
         result = await db.execute(
             select(UserRole)
             .options(selectinload(UserRole.role))

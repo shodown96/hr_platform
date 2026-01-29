@@ -51,7 +51,7 @@ class AuthEventPublisher:
             "role_id": role_id,
             "role_name": role_name
         }
-        
+        print("Publishing event")
         await rabbitmq.publish_event(
             routing_key="user.role.assigned",
             event_data=event

@@ -5,6 +5,7 @@
 # app = create_application(router=api_router, settings=settings)
 
 
+import asyncio
 from collections.abc import AsyncGenerator, Callable
 from contextlib import _AsyncGeneratorContextManager, asynccontextmanager
 from typing import Any
@@ -27,6 +28,7 @@ from app.core.db import Base, SessionDep
 from app.core.db import async_engine as engine
 from app.core.health import check_database_health, check_redis_health
 from app.core.utils import cache, queue
+from app.messaging.auth_event_consumer import AuthEventConsumer
 from app.messaging.rabbitmq import get_rabbitmq_client
 from app.models import *  # noqa: F403
 from arq import create_pool
@@ -70,11 +72,11 @@ async def set_threadpool_tokens(number_of_tokens: int = 100) -> None:
     limiter.total_tokens = number_of_tokens
 
 
-app = FastAPI(
-    title="HR Employee Management Service",
-    description="Employee Management Microservice",
-    version="1.0.0",
-)
+# -------------- consumer --------------
+async def start_event_consumer():
+    """Start event consumer on app startup"""
+    consumer = AuthEventConsumer(settings.RABBITMQ_URL)
+    asyncio.create_task(consumer.start())
 
 
 def lifespan_factory(
@@ -88,7 +90,7 @@ def lifespan_factory(
         | EnvironmentSettings
         | RabbitMQSettings
     ),
-    create_tables_on_start: bool = True,
+    create_tables_on_start: bool = False,
 ) -> Callable[[FastAPI], _AsyncGeneratorContextManager[Any]]:
     """Factory to create a lifespan async context manager for a FastAPI app."""
 
@@ -111,9 +113,11 @@ def lifespan_factory(
             if create_tables_on_start:
                 await create_tables()
 
+            print("is instance")
             if isinstance(settings, RabbitMQSettings):
                 # Initialize RabbitMQ
                 await get_rabbitmq_client()
+                await start_event_consumer()
 
             initialization_complete.set()
 
@@ -135,6 +139,13 @@ def lifespan_factory(
     return lifespan
 
 
+app = FastAPI(
+    title="HR Employee Management Service",
+    description="Employee Management Microservice",
+    version="1.0.0",
+    lifespan=lifespan_factory(settings),
+)
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
@@ -143,9 +154,6 @@ app.add_middleware(
     allow_methods=settings.CORS_METHODS,
     allow_headers=settings.CORS_HEADERS,
 )
-
-# Include routers
-app.include_router(api_router)
 
 
 @app.get("/", tags=["Base"])
@@ -160,3 +168,7 @@ async def get_base_endpoint(db: SessionDep, redis: cache.RedisDep):
             "redis": f"{'un'if not redis_health else ''}healthy",
         },
     }
+
+
+# Include routers
+app.include_router(api_router)

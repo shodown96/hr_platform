@@ -70,13 +70,6 @@ async def set_threadpool_tokens(number_of_tokens: int = 100) -> None:
     limiter.total_tokens = number_of_tokens
 
 
-app = FastAPI(
-    title="HR Employee Management Service",
-    description="Employee Management Microservice",
-    version="1.0.0",
-)
-
-
 def lifespan_factory(
     settings: (
         DatabaseSettings
@@ -88,7 +81,7 @@ def lifespan_factory(
         | EnvironmentSettings
         | RabbitMQSettings
     ),
-    create_tables_on_start: bool = True,
+    create_tables_on_start: bool = False,
 ) -> Callable[[FastAPI], _AsyncGeneratorContextManager[Any]]:
     """Factory to create a lifespan async context manager for a FastAPI app."""
 
@@ -133,6 +126,14 @@ def lifespan_factory(
                     await rabbitmq_client.close()
 
     return lifespan
+
+
+app = FastAPI(
+    title="HR Payroll Management Service",
+    description="Payroll Management Microservice",
+    version="1.0.0",
+    lifespan=lifespan_factory(settings),
+)
 
 
 # CORS

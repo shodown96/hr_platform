@@ -5,7 +5,8 @@ from pydantic import SecretStr, computed_field
 
 
 class AppSettings(BaseSettings):
-    APP_NAME: str = "FastAPI app"
+    APP_NAME: str = "Payroll Service"
+    SERVICE_NAME: str = "payroll_service"
     APP_DESCRIPTION: str | None = None
     APP_VERSION: str | None = None
     LICENSE_NAME: str | None = None
@@ -146,7 +147,7 @@ class CORSSettings(BaseSettings):
 
 
 class RabbitMQSettings(BaseSettings):
-    RABBITMQ_URL: str = "amqp://guest:guest@localhost:5672/"
+    RABBITMQ_URL: str = "amqp://guest:guest@127.0.0.1:5672/"
 
 
 class MicroserviceSettings(BaseSettings):
