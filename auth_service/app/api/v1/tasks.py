@@ -2,8 +2,9 @@ from typing import Any
 
 from app.core.schemas import Job
 from app.core.utils import queue
+from app.schemas.auth import ForgotPasswordRequest
 from arq.jobs import Job as ArqJob
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -55,3 +56,23 @@ async def get_task(task_id: str) -> dict[str, Any] | None:
         return None
 
     return job_info.__dict__
+
+
+@router.post("/send-email")
+async def send_email(
+    request_data: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+):
+    """Send OTP to email"""
+
+    # Send email in background
+    # TODO: Email service
+    # email_service = EmailService()
+
+    # background_tasks.add_task(
+    #     email_service.send_otp_email,
+    #     to_email=token.email,
+    #     otp_code=token.otp_code
+    # )
+
+    return {"message": "OTP sent to email"}

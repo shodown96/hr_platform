@@ -129,6 +129,13 @@ class PermissionResponse(PermissionBase):
     created_at: datetime
 
 
+class UserPermissionResponse(BaseModel):
+    user_id: str = Field(..., max_length=50)
+    permission_id: str = Field(..., max_length=50)
+    model_config = ConfigDict(from_attributes=True)
+    permission: Optional["PermissionResponse"]
+
+
 # Auth Schemas
 class SignInRequest(BaseModel):
     # email: str
@@ -178,9 +185,14 @@ class AssignRoleRequest(BaseModel):
     role_id: str
 
 
-class AssignPermissionRequest(BaseModel):
+class AssignPermissionToRoleRequest(BaseModel):
     role_id: str
     permission_id: str
+
+class AssignPermissionToUserRequest(BaseModel):
+    user_id: str
+    permission_id: str
+
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr

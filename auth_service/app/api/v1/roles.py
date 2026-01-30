@@ -5,18 +5,13 @@ from app.core.dependencies.auth import check_permission, get_current_superuser
 from app.messaging.rabbitmq import RabbitMQDep
 from app.models.auth import User
 from app.schemas.auth import (
-    AssignPermissionRequest,
     AssignRoleRequest,
-    PermissionCreate,
-    PermissionResponse,
     RoleCreate,
     RoleResponse,
     RoleWithPermissions,
 )
-from app.services.auth import AuthService
-from app.services.permissions import PermissionService
 from app.services.roles import RoleService
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 router = APIRouter()
 
@@ -73,9 +68,7 @@ async def assign_role_to_user(
     return {"message": "Role assigned successfully"}
 
 
-@router.delete(
-    "/{user_id}/roles/{role_id}", status_code=status.HTTP_204_NO_CONTENT
-)
+@router.delete("/{user_id}/roles/{role_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_role_from_user(
     user_id: str,
     role_id: str,
@@ -84,46 +77,3 @@ async def remove_role_from_user(
 ):
     """Remove role from user"""
     await RoleService.remove_role_from_user(db, user_id, role_id)
-
-
-# Permission Management Endpoints
-@router.post(
-    "/permissions",
-    response_model=PermissionResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_permission(
-    permission_data: PermissionCreate,
-    db: SessionDep,
-    current_user: User = Depends(get_current_superuser),
-):
-    """Create a new permission"""
-    permission = await PermissionService.create_permission(db, permission_data)
-    return permission
-
-
-@router.post("/assign-permission", status_code=status.HTTP_200_OK)
-async def assign_permission_to_role(
-    request: AssignPermissionRequest,
-    db: SessionDep,
-    current_user: User = Depends(get_current_superuser),
-):
-    """Assign permission to role"""
-    role_perm = await PermissionService.assign_permission_to_role(
-        db, request.role_id, request.permission_id
-    )
-    return {"message": "Permission assigned successfully"}
-
-
-@router.delete(
-    "/{role_id}/permissions/{permission_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def remove_permission_from_role(
-    role_id: str,
-    permission_id: str,
-    db: SessionDep,
-    current_user: User = Depends(get_current_superuser),
-):
-    """Remove permission from role"""
-    await PermissionService.remove_permission_from_role(db, role_id, permission_id)

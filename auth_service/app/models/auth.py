@@ -22,6 +22,11 @@ class User(BaseModel):
         back_populates="user",
         init=False,
     )
+    user_permissions: Mapped[List["UserPermission"]] = relationship(
+        "UserPermission",
+        back_populates="user",
+        init=False,
+    )
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -63,6 +68,11 @@ class Permission(BaseModel):
     # Relationships
     role_permissions: Mapped[List["RolePermission"]] = relationship(
         "RolePermission",
+        back_populates="permission",
+        init=False,
+    )
+    user_permissions: Mapped[List["UserPermission"]] = relationship(
+        "UserPermission",
         back_populates="permission",
         init=False,
     )
@@ -133,18 +143,48 @@ class RolePermission(BaseModel):
         default_factory=lambda: datetime.now(UTC),
     )
 
+
+class UserPermission(BaseModel):
+    __tablename__ = "user_permissions"
+
+    user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    permission_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("permissions.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="user_permissions",
+        init=False,
+    )
+    permission: Mapped["Permission"] = relationship(
+        "Permission",
+        back_populates="user_permissions",
+        init=False,
+    )
+
+
+# TODO: Roles and Permissions should be switched BaseImmutableModel
+
+
 class VerificationToken(BaseImmutableModel):
     """Simple verification token for password reset"""
+
     __tablename__ = "verification_tokens"
-    
+
     email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     otp_code: Mapped[str] = mapped_column(String(6), nullable=False)
-    
+
     @staticmethod
     def generate_otp() -> str:
         """Generate 6-digit OTP"""
         return str(random.randint(100000, 999999))
-    
+
     def is_expired(self, expiry_minutes: int = settings.OTP_EXPIRE_MINUTES) -> bool:
         """Check if OTP is expired (default 10 minutes)"""
         expiry_time = self.created_at + timedelta(minutes=expiry_minutes)

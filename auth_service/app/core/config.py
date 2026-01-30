@@ -154,6 +154,20 @@ class MicroserviceSettings(BaseSettings):
     AUTH_SERVICE_URL: str = "http://localhost:8000"
 
 
+class EmailSettings(BaseSettings):
+    EMAIL_SMTP_HOST: str | None = None
+    EMAIL_SMTP_PORT: int = 587
+    EMAIL_SMTP_USERNAME: str | None = None
+    EMAIL_SMTP_PASSWORD: str | None = None
+    EMAIL_FROM_ADDRESS: str | None = None
+    EMAIL_FROM_NAME: str | None = None
+    EMAIL_SMTP_USE_TLS: bool = False
+    
+    EMAIL_API_KEY: str | None = None
+    EMAIL_API_SECRET: str | None = None 
+    EMAIL_API_SEND_URL: str = "https://api.mailjet.com/v3.1/send"
+
+
 class Settings(
     AppSettings,
     SQLiteSettings,
@@ -168,6 +182,7 @@ class Settings(
     CORSSettings,
     RabbitMQSettings,
     MicroserviceSettings,
+    EmailSettings,
 ):
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
     # env_file=os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", ".env"),

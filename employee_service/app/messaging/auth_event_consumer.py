@@ -19,7 +19,6 @@ class AuthEventConsumer:
 
     async def start(self):
         """Start consuming auth events"""
-        print("start consumer")
         self.connection = await aio_pika.connect_robust(self.rabbitmq_url)
         self.channel = await self.connection.channel()
 
@@ -33,6 +32,7 @@ class AuthEventConsumer:
         )
 
         await queue.bind(exchange, routing_key="user.permissions.#")
+        await queue.bind(exchange, routing_key="user.permission.#")
         await queue.bind(exchange, routing_key="user.role.#")
         await queue.bind(exchange, routing_key="user.deactivated")
 
@@ -61,11 +61,15 @@ class AuthEventConsumer:
     async def handle_permissions_changed(self, event_data: dict):
         """Handle permission change - invalidate cache"""
         user_id = event_data["user_id"]
+        removed_permissions = event_data.get('removed_permissions', [])
+        added_permissions = event_data.get('added_permissions', [])
 
         print(f"🔄 Permissions changed for user {user_id}")
-        print(f"   Removed: {event_data.get('removed_permissions', [])}")
-        print(f"   Added: {event_data.get('added_permissions', [])}")
+        if len(added_permissions) or len(removed_permissions):
+            print(f"   Removed: {event_data.get('removed_permissions', [])}")
+            print(f"   Added: {event_data.get('added_permissions', [])}")
 
+        # Invalidate cache - user will get fresh permissions on next request
         cache = await get_permission_cache()
         await cache.invalidate_all_for_user(user_id)
 
@@ -78,6 +82,7 @@ class AuthEventConsumer:
 
         print(f"🔄 Role '{role_name}' changed for user {user_id}")
 
+        # Invalidate cache - user will get fresh permissions on next request
         cache = await get_permission_cache()
         await cache.invalidate_all_for_user(user_id)
 
@@ -89,6 +94,7 @@ class AuthEventConsumer:
 
         print(f"🚫 User {user_id} deactivated")
 
+        # Invalidate cache - user will get fresh permissions on next request
         cache = await get_permission_cache()
         await cache.invalidate_all_for_user(user_id)
 

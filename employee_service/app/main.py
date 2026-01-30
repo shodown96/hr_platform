@@ -113,7 +113,6 @@ def lifespan_factory(
             if create_tables_on_start:
                 await create_tables()
 
-            print("is instance")
             if isinstance(settings, RabbitMQSettings):
                 # Initialize RabbitMQ
                 await get_rabbitmq_client()

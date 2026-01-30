@@ -114,14 +114,15 @@ class RoleService:
         db.add(user_role)
         await db.commit()
         await db.refresh(user_role)
-        
+
         role_result = await db.execute(select(Role.name).where(Role.id == role_id))
         role_name = role_result.scalar_one()
-        
+
         # Publish event
         await AuthEventPublisher.publish_role_assigned(
             rabbitmq, user_id, role_id, role_name
         )
+        # set_user_permissions
 
         return user_role
 
@@ -146,12 +147,14 @@ class RoleService:
         await db.delete(user_role)
         await db.commit()
 
-        # Publish event
-        if user_role.role:
-            await AuthEventPublisher.publish_role_removed(
-                rabbitmq, user_id, role_id, user_role.role.name
-            )
+        role_result = await db.execute(select(Role.name).where(Role.id == role_id))
+        role_name = role_result.scalar_one()
 
-        # Invalidate cache
+        # Publish event
+        await AuthEventPublisher.publish_role_removed(
+            rabbitmq, user_id, role_id, role_name
+        )
+
+        # Invalidate cache - user will get fresh permissions on next request
         cache = await get_permission_cache()
         await cache.invalidate_all_for_user(user_id)

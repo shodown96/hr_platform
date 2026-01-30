@@ -6,3 +6,6 @@ Maybe change employee/employment to workforce?
 Thoroughly check how tokens are being managed, what does into the payload
 Remove # TEST statements, or handle them better
 Docker setup
+pagination standard query params
+reset redis and rabbitmq admin passwords and assign proper users
+Configure loggin system properly

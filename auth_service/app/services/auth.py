@@ -22,6 +22,8 @@ from sqlalchemy import or_, select, delete, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 from shared.auth.jwt_utils import JWTManager
+from app.messaging.event_publisher import AuthEventPublisher
+from app.messaging.rabbitmq import RabbitMQClient
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/sign-in")
@@ -425,6 +427,7 @@ class AuthService:
     @staticmethod
     async def verify_and_reset(
         db: AsyncSession,
+        rabbitmq: RabbitMQClient,
         email: str,
         otp_code: str,
         new_password: str
@@ -449,7 +452,7 @@ class AuthService:
             )
         
         # Check if expired (10 minutes)
-        if token.is_expired(10):
+        if token.is_expired(settings.OTP_EXPIRE_MINUTES): # 10mins
             await db.delete(token)
             await db.commit()
             raise HTTPException(
@@ -477,11 +480,17 @@ class AuthService:
         await db.commit()
         await db.refresh(user)
         
+        # Publish event
+        await AuthEventPublisher.publish_user_password_reset(
+            rabbitmq, user.id
+        )
+        
         return user
     
     @staticmethod
     async def change_password(
         db: AsyncSession,
+        rabbitmq: RabbitMQClient,
         user_id: str,
         current_password: str,
         new_password: str
@@ -510,6 +519,11 @@ class AuthService:
         
         await db.commit()
         await db.refresh(user)
+        
+        # Publish event
+        await AuthEventPublisher.publish_user_password_changed(
+            rabbitmq, user_id
+        )
         
         return user
 

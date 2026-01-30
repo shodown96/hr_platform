@@ -12,6 +12,8 @@ from app.schemas.auth import (
 from app.services.auth import AuthService
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from app.messaging.rabbitmq import RabbitMQDep
+from app.services.email import EmailService
 
 router = APIRouter()
 
@@ -88,15 +90,8 @@ async def forgot_password(
 
     token = await AuthService.request_reset(db, request_data.email)
 
-    # Send email in background
-    # TODO: Email service
-    # email_service = EmailService()
-
-    # background_tasks.add_task(
-    #     email_service.send_otp_email,
-    #     to_email=token.email,
-    #     otp_code=token.otp_code
-    # )
+    email_service = EmailService()
+    await email_service.send_otp_email(token.email, token.otp_code)
 
     return {"message": "OTP sent to email"}
 
@@ -104,12 +99,13 @@ async def forgot_password(
 @router.post("/reset-password")
 async def reset_password(
     db: SessionDep,
+    rabbitmq: RabbitMQDep,
     reset_data: VerifyResetRequest,
 ):
     """Verify OTP and reset password (single step)"""
 
     await AuthService.verify_and_reset(
-        db, reset_data.email, reset_data.otp_code, reset_data.new_password
+        db, rabbitmq, reset_data.email, reset_data.otp_code, reset_data.new_password
     )
 
     return {"message": "Password reset successfully"}
@@ -118,13 +114,19 @@ async def reset_password(
 @router.post("/change-password")
 async def change_password(
     db: SessionDep,
+    rabbitmq: RabbitMQDep,
     change_data: ChangePasswordRequest,
     current_user: TokenData = Depends(get_current_user),
 ):
     """Change password (authenticated)"""
 
     await AuthService.change_password(
-        db, current_user.user_id, change_data.current_password, change_data.new_password
+        db,
+        rabbitmq,
+        current_user.user_id,
+        change_data.current_password,
+        change_data.new_password,
     )
+    # TODO: Send email regarding change of password
 
     return {"message": "Password changed successfully"}
