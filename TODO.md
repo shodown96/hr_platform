@@ -9,3 +9,4 @@ Docker setup
 pagination standard query params
 reset redis and rabbitmq admin passwords and assign proper users
 Configure loggin system properly
+maybe cache should be co
