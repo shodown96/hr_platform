@@ -1,9 +1,8 @@
-# employee_service/app/messaging/auth_event_consumer.py
 import json
 
 import aio_pika
 from app.core.config import settings
-from shared.cache.permissions import get_permission_cache
+from app.core.shared.cache.permissions import get_permission_cache
 
 
 class AuthEventConsumer:
@@ -61,17 +60,18 @@ class AuthEventConsumer:
     async def handle_permissions_changed(self, event_data: dict):
         """Handle permission change - invalidate cache"""
         user_id = event_data["user_id"]
-        removed_permissions = event_data.get('removed_permissions', [])
-        added_permissions = event_data.get('added_permissions', [])
+        removed_permissions = event_data.get("removed_permissions", [])
+        added_permissions = event_data.get("added_permissions", [])
 
         print(f"🔄 Permissions changed for user {user_id}")
         if len(added_permissions) or len(removed_permissions):
             print(f"   Removed: {event_data.get('removed_permissions', [])}")
             print(f"   Added: {event_data.get('added_permissions', [])}")
 
-        # Invalidate cache - user will get fresh permissions on next request
-        cache = await get_permission_cache()
-        await cache.invalidate_all_for_user(user_id)
+        # # Invalidate cache - user will get fresh permissions on next request
+        # cache = await get_permission_cache()
+        # await cache.invalidate_all_for_user(user_id)
+        # TODO: Do something else
 
         print(f"✅ Cache invalidated for user {user_id}")
 
@@ -82,20 +82,8 @@ class AuthEventConsumer:
 
         print(f"🔄 Role '{role_name}' changed for user {user_id}")
 
-        # Invalidate cache - user will get fresh permissions on next request
-        cache = await get_permission_cache()
-        await cache.invalidate_all_for_user(user_id)
-
-        print(f"✅ Cache invalidated for user {user_id}")
-
     async def handle_user_deactivated(self, event_data: dict):
         """Handle user deactivation - invalidate everything"""
         user_id = event_data["user_id"]
 
         print(f"🚫 User {user_id} deactivated")
-
-        # Invalidate cache - user will get fresh permissions on next request
-        cache = await get_permission_cache()
-        await cache.invalidate_all_for_user(user_id)
-
-        print(f"✅ All cache cleared for user {user_id}")

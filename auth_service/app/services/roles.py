@@ -1,12 +1,12 @@
-from typing import Optional, List
+from typing import List, Optional
 
+from app.core.shared.cache.permissions import get_permission_cache
 from app.messaging.event_publisher import AuthEventPublisher
 from app.messaging.rabbitmq import RabbitMQClient
 from app.models.auth import Role, RolePermission, UserRole
-from app.schemas.auth import RoleCreate, RoleWithPermissions, PermissionResponse
+from app.schemas.auth import PermissionResponse, RoleCreate, RoleWithPermissions
 from fastapi import HTTPException, status
-from shared.cache.permissions import get_permission_cache
-from sqlalchemy import select, delete
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 

@@ -1,17 +1,18 @@
+from typing import List
+
+from app.core.shared.cache.permissions import get_permission_cache
+from app.messaging.event_publisher import AuthEventPublisher
+from app.messaging.rabbitmq import RabbitMQClient
 from app.models.auth import Permission, RolePermission, User, UserPermission
 from app.schemas.auth import (
     PermissionCreate,
-    UserPermissionResponse,
     PermissionResponse,
+    UserPermissionResponse,
 )
 from fastapi import HTTPException, status
-from sqlalchemy import select, delete
-from sqlalchemy.orm import selectinload
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
-from app.messaging.rabbitmq import RabbitMQClient
-from app.messaging.event_publisher import AuthEventPublisher
-from shared.cache.permissions import get_permission_cache
+from sqlalchemy.orm import selectinload
 
 
 class PermissionService:

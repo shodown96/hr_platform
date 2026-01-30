@@ -149,13 +149,10 @@ class TokenResponse(BaseModel):
 
 
 class TokenData(BaseModel):
+    # username_or_email: str
     user_id: str
     is_superuser: bool
     permissions: List[str] = []
-
-
-# class TokenData(BaseModel):
-#     username_or_email: str
 
 
 class TokenType(str, Enum):
@@ -188,6 +185,7 @@ class AssignRoleRequest(BaseModel):
 class AssignPermissionToRoleRequest(BaseModel):
     role_id: str
     permission_id: str
+
 
 class AssignPermissionToUserRequest(BaseModel):
     user_id: str

@@ -20,32 +20,6 @@ class JWTManager:
         self.secret_key = secret_key
         self.algorithm = algorithm
 
-    def create_token(
-        self,
-        user_id: str,
-        username: str,
-        is_superuser: bool,
-        permissions: List[str],
-        expires_delta: Optional[timedelta] = None,
-    ) -> str:
-        """Create JWT access token"""
-        to_encode = {
-            "sub": user_id,
-            "username": username,
-            "is_superuser": is_superuser,
-            "permissions": permissions,
-        }
-
-        if expires_delta:
-            expire = datetime.now(UTC) + expires_delta
-        else:
-            expire = datetime.now(UTC) + timedelta(minutes=30)
-
-        to_encode.update({"exp": expire})
-
-        encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
-        return encoded_jwt
-
     def verify_token(self, token: str) -> Optional[TokenData]:
         """Verify and decode JWT token"""
         try:

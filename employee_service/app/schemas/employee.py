@@ -53,7 +53,7 @@ class DepartmentResponse(DepartmentBase):
 
 # Position Schemas
 class PositionBase(BaseModel):
-    title: str = Field(..., min_length=2, max_length=100)
+    name: str = Field(..., min_length=2, max_length=100)
     description: Optional[str] = None
     level: Optional[str] = None
     department_id: str

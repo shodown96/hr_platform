@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 
 from app.core.config import settings
+from app.core.shared.auth.jwt_utils import JWTManager, TokenData
+from app.core.shared.cache.permissions import PermissionCache, get_permission_cache
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from shared.auth.jwt_utils import JWTManager, TokenData
-from shared.cache.permissions import PermissionCache, get_permission_cache
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl=f"{settings.AUTH_SERVICE_URL}/api/v1/auth/sign-in"

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, UTC
+from datetime import datetime
 from typing import Optional, List
 from jose import JWTError, jwt
 from pydantic import BaseModel
@@ -19,32 +19,6 @@ class JWTManager:
     def __init__(self, secret_key: str, algorithm: str = "HS256"):
         self.secret_key = secret_key
         self.algorithm = algorithm
-
-    def create_token(
-        self,
-        user_id: str,
-        username: str,
-        is_superuser: bool,
-        permissions: List[str],
-        expires_delta: Optional[timedelta] = None,
-    ) -> str:
-        """Create JWT access token"""
-        to_encode = {
-            "sub": user_id,
-            "username": username,
-            "is_superuser": is_superuser,
-            "permissions": permissions,
-        }
-
-        if expires_delta:
-            expire = datetime.now(UTC) + expires_delta
-        else:
-            expire = datetime.now(UTC) + timedelta(minutes=30)
-
-        to_encode.update({"exp": expire})
-
-        encoded_jwt = jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
-        return encoded_jwt
 
     def verify_token(self, token: str) -> Optional[TokenData]:
         """Verify and decode JWT token"""

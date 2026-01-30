@@ -3,8 +3,8 @@ from typing import List, Optional
 
 from app.messaging.event_publisher import EventPublisher
 from app.messaging.rabbitmq import RabbitMQClient
-from app.models.employment import Department, Employee, Position
-from app.schemas.employment import EmployeeCreate, EmployeeUpdate
+from employee_service.app.models.employee import Department, Employee, Position
+from employee_service.app.schemas.employee import EmployeeCreate, EmployeeUpdate
 from fastapi import HTTPException, status
 from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession

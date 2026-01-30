@@ -1,11 +1,11 @@
 from typing import List, Optional
 
 from fastapi import HTTPException, status
-from app.schemas.employment import PositionCreate, PositionUpdate
+from employee_service.app.schemas.employee import PositionCreate, PositionUpdate
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.employment import Department, Position
+from employee_service.app.models.employee import Department, Position
 
 
 class PositionService:

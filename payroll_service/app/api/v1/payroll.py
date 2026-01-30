@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from app.core.db import SessionDep
 from app.core.dependencies.auth import check_permission, get_current_user_from_token
+from app.core.shared.auth.jwt_utils import TokenData
 from app.services.payroll import EmployeeSalaryService, PayrollService
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from schemas.payroll import (
@@ -14,8 +15,6 @@ from schemas.payroll import (
     PayrollRecordWithComponents,
     PayrollSummary,
 )
-
-from hr_shared.auth.jwt_utils import TokenData
 
 router = APIRouter()
 

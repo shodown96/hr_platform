@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import uuid4
 from datetime import datetime, UTC
-from app.models.employment import Employee
+from employee_service.app.models.employee import Employee
 from app.messaging.rabbitmq import RabbitMQClient
 from app.schemas.events import (
     EmployeeCreatedEvent,

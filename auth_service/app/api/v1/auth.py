@@ -1,5 +1,7 @@
 from app.core.db import SessionDep
 from app.core.dependencies.auth import get_current_user
+from app.core.shared.cache.permissions import PermissionCache, get_permission_cache
+from app.messaging.rabbitmq import RabbitMQDep
 from app.schemas.auth import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
@@ -10,10 +12,9 @@ from app.schemas.auth import (
     VerifyResetRequest,
 )
 from app.services.auth import AuthService
+from app.services.email import EmailService
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from app.messaging.rabbitmq import RabbitMQDep
-from app.services.email import EmailService
 
 router = APIRouter()
 
@@ -24,6 +25,7 @@ router = APIRouter()
 async def sign_up(
     user_data: UserCreate,
     db: SessionDep,
+    cache: PermissionCache = Depends(get_permission_cache),
     # dependencies=Depends(anonymous_only),
 ):
     """Sign up as a new user"""
@@ -33,7 +35,7 @@ async def sign_up(
     # TODO: Add basic permissions to the user
 
     # Get user permissions
-    permissions = await AuthService.get_user_permissions(db, str(user.id))
+    permissions = await AuthService.get_user_permissions(db, cache, user.id)
 
     # Create access token
     access_token = AuthService.create_access_token(

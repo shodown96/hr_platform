@@ -1,29 +1,37 @@
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any, List, Optional
-import bcrypt
 
+import bcrypt
 from app.core.config import settings
-from app.models.auth import Role, RolePermission, User, UserRole, VerificationToken
+from app.core.shared.auth.jwt_utils import JWTManager
+from app.core.shared.cache.permissions import PermissionCache
+from app.messaging.event_publisher import AuthEventPublisher
+from app.messaging.rabbitmq import RabbitMQClient
+from app.models.auth import (
+    Role,
+    RolePermission,
+    User,
+    UserPermission,
+    UserRole,
+    VerificationToken,
+)
 from app.models.token_blacklist import TokenBlacklist
 from app.schemas.auth import (
+    RoleResponse,
     TokenData,
+    TokenType,
     UserCreate,
     UserUpdate,
-    TokenType,
     UserWithRoles,
-    RoleResponse,
 )
 from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy import or_, select, delete, and_
+from sqlalchemy import and_, delete, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
-from shared.auth.jwt_utils import JWTManager
-from app.messaging.event_publisher import AuthEventPublisher
-from app.messaging.rabbitmq import RabbitMQClient
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/sign-in")
@@ -147,7 +155,9 @@ class AuthService:
         db: AsyncSession, username: str, password: str
     ) -> Optional[User]:
 
-        result = await db.execute(select(User).where(User.username == username))
+        result = await db.execute(
+            select(User).where(User.username == username, User.is_active != False)
+        )
         user = result.scalar_one_or_none()
 
         if not user:
@@ -237,10 +247,9 @@ class AuthService:
         stmt = select(User)
         if not include_superusers:
             stmt = stmt.where(User.is_superuser == False)
-            
+
         result = await db.execute(
-            stmt
-            .options(selectinload(User.user_roles).selectinload(UserRole.role))
+            stmt.options(selectinload(User.user_roles).selectinload(UserRole.role))
             .limit(limit)
             .offset(offset)
             .order_by(User.created_at.desc())
@@ -309,15 +318,19 @@ class AuthService:
         return user
 
     @staticmethod
-    async def get_user_permissions(db: AsyncSession, user_id: str) -> List[str]:
-
+    async def get_user_permissions(
+        db: AsyncSession, cache: PermissionCache, user_id: str
+    ) -> List[str]:
         result = await db.execute(
             select(User)
             .options(
+                # role -> permissions
                 joinedload(User.user_roles)
                 .joinedload(UserRole.role)
                 .joinedload(Role.role_permissions)
-                .joinedload(RolePermission.permission)
+                .joinedload(RolePermission.permission),
+                # direct user -> permissions
+                joinedload(User.user_permissions).joinedload(UserPermission.permission),
             )
             .where(User.id == user_id)
         )
@@ -326,11 +339,38 @@ class AuthService:
         if not user:
             return []
 
+        # permissions = set()
+        # # permissions from roles
+        # for user_role in user.user_roles:
+        #     for role_permission in user_role.role.role_permissions:
+        #         permission = role_permission.permission
+        #         permissions.add(
+        #             f"{permission.resource}:{permission.action}"
+        #         )
+
+        # # permissions attached directly to the user
+        # for user_permission in user.user_permissions:
+        #     permission = user_permission.permission
+        #     permissions.add(
+        #         f"{permission.resource}:{permission.action}"
+        #     )
+
+        # permissions = {
+        #     f"{rp.permission.resource}:{rp.permission.action}"
+        #     for ur in user.user_roles
+        #     for rp in ur.role.role_permissions
+        # }
+
         permissions = {
-            f"{rp.permission.resource}:{rp.permission.action}"
-            for ur in user.user_roles
-            for rp in ur.role.role_permissions
+            f"{permission.resource}:{permission.action}"
+            for user_role in user.user_roles
+            for permission in (rp.permission for rp in user_role.role.role_permissions)
+        } | {
+            f"{up.permission.resource}:{up.permission.action}"
+            for up in user.user_permissions
         }
+
+        await cache.set_user_permissions(user_id, permissions)
 
         return list(permissions)
 
@@ -390,140 +430,132 @@ class AuthService:
 
         return access_token, user
 
-
- 
     @staticmethod
     async def request_reset(db: AsyncSession, email: str) -> VerificationToken:
         """Send OTP for password reset"""
-        
+
         # Check if user exists
         stmt = select(User).where(User.email == email)
         result = await db.execute(stmt)
         user = result.scalar_one_or_none()
-        
+
         if not user:
             # Don't reveal if email exists
             raise HTTPException(
                 status_code=status.HTTP_200_OK,
-                detail="If email exists, OTP has been sent"
+                detail="If email exists, OTP has been sent",
             )
-        
+
         # Delete old OTPs for this email
         stmt = delete(VerificationToken).where(VerificationToken.email == email)
         await db.execute(stmt)
-        
+
         # Create new OTP
         token = VerificationToken(
-            email=email,
-            otp_code=VerificationToken.generate_otp()
+            email=email, otp_code=VerificationToken.generate_otp()
         )
-        
+
         db.add(token)
         await db.commit()
         await db.refresh(token)
-        
+
         return token
-    
+
     @staticmethod
     async def verify_and_reset(
         db: AsyncSession,
         rabbitmq: RabbitMQClient,
         email: str,
         otp_code: str,
-        new_password: str
+        new_password: str,
     ) -> User:
         """Verify OTP and reset password"""
-        
+
         # Find OTP
-        stmt = select(VerificationToken).where(
-            and_(
-                VerificationToken.email == email,
-                VerificationToken.otp_code == otp_code
+        stmt = (
+            select(VerificationToken)
+            .where(
+                and_(
+                    VerificationToken.email == email,
+                    VerificationToken.otp_code == otp_code,
+                )
             )
-        ).order_by(VerificationToken.created_at.desc())
-        
+            .order_by(VerificationToken.created_at.desc())
+        )
+
         result = await db.execute(stmt)
         token = result.scalar_one_or_none()
-        
+
         if not token:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid OTP code"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP code"
             )
-        
+
         # Check if expired (10 minutes)
-        if token.is_expired(settings.OTP_EXPIRE_MINUTES): # 10mins
+        if token.is_expired(settings.OTP_EXPIRE_MINUTES):  # 10mins
             await db.delete(token)
             await db.commit()
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="OTP has expired"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="OTP has expired"
             )
-        
+
         # Get user
         stmt = select(User).where(User.email == email)
         result = await db.execute(stmt)
         user = result.scalar_one_or_none()
-        
+
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
             )
-        
+
         # Update password
         user.password_hash = AuthService.hash_password(new_password)
-        
+
         # Delete used OTP
         await db.delete(token)
-        
+
         await db.commit()
         await db.refresh(user)
-        
+
         # Publish event
-        await AuthEventPublisher.publish_user_password_reset(
-            rabbitmq, user.id
-        )
-        
+        await AuthEventPublisher.publish_user_password_reset(rabbitmq, user.id)
+
         return user
-    
+
     @staticmethod
     async def change_password(
         db: AsyncSession,
         rabbitmq: RabbitMQClient,
         user_id: str,
         current_password: str,
-        new_password: str
+        new_password: str,
     ) -> User:
         """Change password for authenticated user"""
-        
+
         stmt = select(User).where(User.id == user_id)
         result = await db.execute(stmt)
         user = result.scalar_one_or_none()
-        
+
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
             )
-        
+
         # Verify current password
         if not AuthService.verify_password(current_password, user.password_hash):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Current password is incorrect"
+                detail="Current password is incorrect",
             )
-        
+
         # Update password
         user.password_hash = AuthService.hash_password(new_password)
-        
+
         await db.commit()
         await db.refresh(user)
-        
-        # Publish event
-        await AuthEventPublisher.publish_user_password_changed(
-            rabbitmq, user_id
-        )
-        
-        return user
 
+        # Publish event
+        await AuthEventPublisher.publish_user_password_changed(rabbitmq, user_id)
+
+        return user

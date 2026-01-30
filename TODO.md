@@ -1,12 +1,7 @@
-Use `hr_shared` a package
-make a script to copy `hr_shared` into the services
-change `title` to `name`
-rename `alembic` to `migrations`
-Maybe change employee/employment to workforce?
-Thoroughly check how tokens are being managed, what does into the payload
-Remove # TEST statements, or handle them better
+Rename alembic to migrations
+Thoroughly check how tokens are being managed what does into the payload
+Remove test statements or handle them better
 Docker setup
-pagination standard query params
-reset redis and rabbitmq admin passwords and assign proper users
+Pagination standard query params
+Reset redis and rabbitmq admin passwords and assign proper users
 Configure loggin system properly
-maybe cache should be co

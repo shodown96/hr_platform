@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from app.core.db import SessionDep
 from app.core.dependencies.auth import check_permission
+from app.core.shared.auth.jwt_utils import TokenData
 from app.models.payroll import PayrollRecord
 from app.services.payroll import PayrollService
 from clients.employee import EmployeeServiceClient
@@ -11,8 +12,6 @@ from fastapi.responses import StreamingResponse
 from services.report import PayrollReportService
 from sqlalchemy import and_, select
 from sqlalchemy.orm import selectinload
-
-from hr_shared.auth.jwt_utils import TokenData
 
 router = APIRouter()
 
