@@ -13,7 +13,7 @@ async def test_user_gets_role_permissions_in_token(
     client: AsyncClient,
     db_session,
 ):
-    print("\n=== START: role → permissions → token test ===")
+    print("\n>>> START: role → permissions → token test >>>")
 
     print("\n[STEP 0] Seed admin user")
     admin = User(
@@ -68,7 +68,7 @@ async def test_user_gets_role_permissions_in_token(
 
     for resource, action in permissions:
         res = await client.post(
-            "/api/v1/auth/roles/permissions",
+            "/api/v1/auth/permissions",
             json={
                 "resource": resource,
                 "action": action,
@@ -84,7 +84,7 @@ async def test_user_gets_role_permissions_in_token(
     print("\n[STEP 3] Assign permissions to role")
     for permission_id in permission_ids:
         res = await client.post(
-            "/api/v1/auth/roles/assign-permission",
+            "/api/v1/auth/permissions/assign-permission-to-role",
             json={
                 "role_id": role_id,
                 "permission_id": permission_id,
@@ -188,4 +188,4 @@ async def test_user_gets_role_permissions_in_token(
     await db_session.execute(delete(User))
     await db_session.commit()
 
-    print("\n=== SUCCESS: role permissions encoded in token ===")
+    print("\n>>> SUCCESS: role permissions encoded in token >>>")

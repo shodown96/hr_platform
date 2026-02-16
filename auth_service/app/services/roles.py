@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from app.core.shared.cache.permissions import get_permission_cache
+from app.core.shared.cache.permissions import PermissionCache, get_permission_cache
 from app.messaging.event_publisher import AuthEventPublisher
 from app.messaging.rabbitmq import RabbitMQClient
 from app.models.auth import Role, RolePermission, UserRole
@@ -84,16 +84,21 @@ class RoleService:
 
     @staticmethod
     async def assign_role_to_user(
-        db: AsyncSession, rabbitmq: RabbitMQClient, user_id: str, role_id: str
+        db: AsyncSession,
+        rabbitmq: RabbitMQClient,
+        cache: PermissionCache,
+        user_id: str,
+        role_id: str,
     ) -> UserRole:
         # TEST
-        await db.execute(
-            delete(UserRole).where(
-                UserRole.user_id == user_id,
-                UserRole.role_id == role_id,
-            )
-        )
-        await db.commit()
+        # await db.execute(
+        #     delete(UserRole).where(
+        #         UserRole.user_id == user_id,
+        #         UserRole.role_id == role_id,
+        #     )
+        # )
+        # await db.commit()
+
         result = await db.execute(
             select(UserRole)
             .options(selectinload(UserRole.role))
@@ -122,7 +127,6 @@ class RoleService:
         await AuthEventPublisher.publish_role_assigned(
             rabbitmq, user_id, role_id, role_name
         )
-        # set_user_permissions
 
         return user_role
 
@@ -158,3 +162,19 @@ class RoleService:
         # Invalidate cache - user will get fresh permissions on next request
         cache = await get_permission_cache()
         await cache.invalidate_all_for_user(user_id)
+
+    @staticmethod
+    async def assign_default_role_to_new_user(
+        db: AsyncSession, rabbitmq: RabbitMQClient, user_id: str
+    ) -> UserRole:
+
+        stmt = select(Role).where(Role.name == "employee")
+        result = await db.execute(stmt)
+        employee_role = result.scalar_one_or_none()
+
+        # Assign role to user
+        await RoleService.assign_role_to_user(
+            db, rabbitmq, str(user_id), str(employee_role.id)
+        )
+
+        return employee_role

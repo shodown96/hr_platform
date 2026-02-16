@@ -147,3 +147,9 @@ class EmployeeWithRelations(EmployeeResponse):
     department: Optional[DepartmentResponse] = None
     position: Optional[PositionResponse] = None
     manager: Optional[EmployeeResponse] = None
+
+
+class TerminationRequest(BaseModel):
+    employee_id: str
+    reason: str
+    termination_date: datetime

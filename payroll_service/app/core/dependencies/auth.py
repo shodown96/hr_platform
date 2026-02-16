@@ -54,9 +54,8 @@ async def get_current_user_from_token(
         print(f"✅ Using cached permissions for user {token_data.user_id}")
         token_data.permissions = cached_permissions
     else:
-        # Cache the permissions from token
-        print(f"📝 Caching permissions for user {token_data.user_id}")
-        await cache.set_user_permissions(token_data.user_id, token_data.permissions)
+        # TODO: Fetch the permissions from Auth service using auth_client?
+        pass
 
     return token_data
 

@@ -6,9 +6,12 @@ from app.core.dependencies.auth import (
     get_current_superuser,
     get_current_user,
 )
+from app.core.shared.cache.permissions import PermissionsDep
+from app.messaging.rabbitmq import RabbitMQDep
 from app.models.auth import User
 from app.schemas.auth import UserCreateInternal, UserResponse, UserUpdate, UserWithRoles
 from app.services.auth import AuthService
+from app.services.roles import RoleService
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 router = APIRouter()
@@ -40,15 +43,19 @@ async def get_users(
 async def create_user(
     user_data: UserCreateInternal,
     db: SessionDep,
+    rabbitmq: RabbitMQDep,
+    cache: PermissionsDep,
     current_user: User = Depends(
         get_current_superuser
     ),  # Only superusers can create users
 ):
     """Create a new user as an admin"""
     user = await AuthService.create_user(db, user_data)
-    
-    # TODO: Add basic permissions to the user
-    
+
+    await RoleService.assign_default_role_to_new_user(db, rabbitmq, user.id)
+
+    permissions = await AuthService.get_user_permissions(db, cache, user.id)
+
     return user
 
 

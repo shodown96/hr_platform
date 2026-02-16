@@ -38,7 +38,7 @@ class User(BaseModel):
 
 
 # ROLE
-class Role(BaseModel):
+class Role(BaseImmutableModel):
     __tablename__ = "roles"
 
     name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
@@ -58,7 +58,7 @@ class Role(BaseModel):
 
 
 # PERMISSION
-class Permission(BaseModel):
+class Permission(BaseImmutableModel):
     __tablename__ = "permissions"
 
     resource: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -167,9 +167,6 @@ class UserPermission(BaseModel):
         back_populates="user_permissions",
         init=False,
     )
-
-
-# TODO: Roles and Permissions should be switched BaseImmutableModel
 
 
 class VerificationToken(BaseImmutableModel):

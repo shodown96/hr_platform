@@ -3,12 +3,13 @@ from typing import List, Optional
 
 from app.messaging.event_publisher import EventPublisher
 from app.messaging.rabbitmq import RabbitMQClient
-from employee_service.app.models.employee import Department, Employee, Position
-from employee_service.app.schemas.employee import EmployeeCreate, EmployeeUpdate
 from fastapi import HTTPException, status
 from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+
+from app.models.employee import Department, Employee, Position
+from app.schemas.employee import EmployeeCreate, EmployeeUpdate, TerminationRequest
 
 
 class EmployeeService:
@@ -16,6 +17,7 @@ class EmployeeService:
     @staticmethod
     async def create_employee(
         db: AsyncSession,
+        rabbitmq: RabbitMQClient,
         employee_data: EmployeeCreate,
     ) -> Employee:
         """Create a new employee"""
@@ -80,6 +82,9 @@ class EmployeeService:
         await db.commit()
         await db.refresh(employee)
 
+        # Publish event
+        await EventPublisher.publish_employee_created(rabbitmq, employee)
+
         return employee
 
     @staticmethod
@@ -115,7 +120,7 @@ class EmployeeService:
 
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
-    
+
     @staticmethod
     async def get_employee_by_code(
         db: AsyncSession, employee_code: str, include_relations: bool = False
@@ -215,10 +220,12 @@ class EmployeeService:
 
     @staticmethod
     async def terminate_employee(
-        db: AsyncSession, employee_id: str, termination_date: date
+        db: AsyncSession,
+        rabbitmq: RabbitMQClient,
+        payload: TerminationRequest,
     ) -> Employee:
         """Terminate an employee"""
-        stmt = select(Employee).where(Employee.id == employee_id)
+        stmt = select(Employee).where(Employee.id == payload.employee_id)
         result = await db.execute(stmt)
         employee = result.scalar_one_or_none()
 
@@ -228,40 +235,14 @@ class EmployeeService:
             )
 
         employee.employment_status = "terminated"
-        employee.termination_date = termination_date
+        employee.termination_date = payload.termination_date
 
         await db.commit()
         await db.refresh(employee)
-
-        return employee
-
-    #  Event driven
-    @staticmethod
-    async def create_employee_with_events(
-        db: AsyncSession, employee_data: EmployeeCreate, rabbitmq: RabbitMQClient
-    ) -> Employee:
-        """Create employee and publish event"""
-        employee = await EmployeeService.create_employee(db, employee_data)
-
         # Publish event
-        await EventPublisher.publish_employee_created(rabbitmq, employee)
-
-        return employee
-
-    @staticmethod
-    async def terminate_employee_with_events(
-        db: AsyncSession,
-        employee_id: str,
-        termination_date: date,
-        rabbitmq: RabbitMQClient,
-        reason: Optional[str] = None,
-    ) -> Employee:
-        """Terminate employee and publish event"""
-        employee = await EmployeeService.terminate_employee(
-            db, employee_id, termination_date
+        await EventPublisher.publish_employee_terminated(
+            rabbitmq, employee, payload.reason
         )
-
-        # Publish event
-        await EventPublisher.publish_employee_terminated(rabbitmq, employee, reason)
+        # Email service
 
         return employee

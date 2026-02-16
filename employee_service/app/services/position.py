@@ -1,11 +1,11 @@
 from typing import List, Optional
 
 from fastapi import HTTPException, status
-from employee_service.app.schemas.employee import PositionCreate, PositionUpdate
+from app.schemas.employee import PositionCreate, PositionUpdate
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from employee_service.app.models.employee import Department, Position
+from app.models.employee import Department, Position
 
 
 class PositionService:
@@ -19,6 +19,7 @@ class PositionService:
         # TEST
         # await db.execute(delete(Position))
         # await db.commit()
+        
         dept_stmt = select(Department).where(
             Department.id == position_data.department_id
         )

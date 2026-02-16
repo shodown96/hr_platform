@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import uuid4
 from datetime import datetime, UTC
-from employee_service.app.models.employee import Employee
+from app.models.employee import Employee, Position, Department
 from app.messaging.rabbitmq import RabbitMQClient
 from app.schemas.events import (
     EmployeeCreatedEvent,
@@ -73,6 +73,53 @@ class EventPublisher:
             employee_email=employee.email,
             termination_date=employee.termination_date.isoformat(),
             reason=reason
+        )
+        
+        await rabbitmq.publish_event(
+            routing_key="employee.terminated",
+            event_data=event.model_dump()
+        )
+
+    
+    @staticmethod
+    async def publish_employee_department_changed(
+        rabbitmq: RabbitMQClient,
+        employee: Employee,
+        department: Department
+    ):
+        """Publish employee department change event"""
+        event = EmployeeTerminatedEvent(
+            event_id=str(uuid4()),
+            timestamp=datetime.now(UTC),
+            employee_id=str(employee.id),
+            employee_code=employee.employee_code,
+            employee_email=employee.email,
+            termination_date=employee.termination_date.isoformat(),
+            department_name=department.name,
+            department_id=department.id,
+        )
+        
+        await rabbitmq.publish_event(
+            routing_key="employee.terminated",
+            event_data=event.model_dump()
+        )
+
+    @staticmethod
+    async def publish_employee_position_changed(
+        rabbitmq: RabbitMQClient,
+        employee: Employee,
+        position: Position
+    ):
+        """Publish employee position change event"""
+        event = EmployeeTerminatedEvent(
+            event_id=str(uuid4()),
+            timestamp=datetime.now(UTC),
+            employee_id=str(employee.id),
+            employee_code=employee.employee_code,
+            employee_email=employee.email,
+            termination_date=employee.termination_date.isoformat(),
+            position_name=position.name,
+            position_id=position.id,
         )
         
         await rabbitmq.publish_event(

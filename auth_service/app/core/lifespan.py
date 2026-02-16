@@ -19,7 +19,7 @@ from app.core.config import (
 from app.core.db import Base, SessionDep
 from app.core.db import async_engine as engine
 from app.core.utils import cache, queue
-from app.messaging.event_consumer import EmployeeEventConsumer
+from auth_service.app.messaging.emp_event_consumer import EmployeeEventConsumer
 from app.messaging.rabbitmq import get_rabbitmq_client
 from app.models import *  # noqa: F403
 from arq import create_pool

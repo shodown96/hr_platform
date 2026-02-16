@@ -2,7 +2,7 @@ from typing import List
 
 from app.core.db import SessionDep
 from app.core.dependencies.auth import check_permission, get_current_active_user
-from employee_service.app.schemas.employee import (
+from app.schemas.employee import (
     DepartmentCreate,
     DepartmentResponse,
     DepartmentUpdate,

@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from app.core.db import SessionDep
 from app.core.dependencies.auth import check_permission
-from employee_service.app.schemas.employee import PositionCreate, PositionResponse
+from app.schemas.employee import PositionCreate, PositionResponse
 from app.services.position import PositionService
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 

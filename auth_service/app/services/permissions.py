@@ -13,6 +13,8 @@ from fastapi import HTTPException, status
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from app.services.auth import AuthService
+from app.core.shared.cache.permissions import PermissionsDep
 
 
 class PermissionService:
@@ -109,31 +111,12 @@ class PermissionService:
         return permissions
 
     @staticmethod
-    async def get_user_permissions(
-        db: AsyncSession, user_id: str
-    ) -> List[UserPermissionResponse]:
-        result = await db.execute(
-            select(UserPermission)
-            .where(UserPermission.user_id == user_id)
-            .options(selectinload(UserPermission.permission))
-        )
-        permissions = result.scalars().all()
-
-        return [
-            UserPermissionResponse(
-                id=r.id,
-                user_id=r.user_id,
-                created_at=r.created_at,
-                updated_at=r.updated_at,
-                permission_id=r.permission.id,
-                permission=PermissionResponse.model_validate(r.permission),
-            )
-            for r in permissions
-        ]
-
-    @staticmethod
     async def grant_permission_to_user(
-        db: AsyncSession, rabbitmq: RabbitMQClient, user_id: str, permission_id: str
+        db: AsyncSession,
+        rabbitmq: RabbitMQClient,
+        cache: PermissionsDep,
+        user_id: str,
+        permission_id: str,
     ) -> UserPermission:
         # TEST
         # await db.execute(
@@ -180,7 +163,10 @@ class PermissionService:
         )
         await AuthEventPublisher.publish_permissions_changed(rabbitmq, user_id)
 
-        # set_user_permissions
+        permissions = await AuthService.get_user_permissions(db, cache, user_id)
+
+        cache = await get_permission_cache()
+        await cache.set_user_permissions(user_id, permissions)
 
         return user_permission
 

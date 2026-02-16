@@ -294,7 +294,7 @@ class PayrollService:
 
         # Publish event
         if rabbitmq:
-            from payroll_service.app.messaging.event_publisher import PayrollEventPublisher
+            from app.messaging.event_publisher import PayrollEventPublisher
 
             await PayrollEventPublisher.publish_payroll_processed(rabbitmq, payroll)
 

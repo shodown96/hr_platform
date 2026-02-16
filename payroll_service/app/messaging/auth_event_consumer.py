@@ -53,6 +53,8 @@ class AuthEventConsumer:
                     await self.handle_role_changed(event_data)
                 elif event_type == "user.deactivated":
                     await self.handle_user_deactivated(event_data)
+                elif event_type == "user.permissions.granted":
+                    await self.handle_user_permission_granted(event_data)
 
             except Exception as e:
                 print(f"❌ Error processing auth event: {e}")
@@ -69,9 +71,8 @@ class AuthEventConsumer:
             print(f"   Added: {event_data.get('added_permissions', [])}")
 
         # # Invalidate cache - user will get fresh permissions on next request
-        # cache = await get_permission_cache()
-        # await cache.invalidate_all_for_user(user_id)
-        # TODO: Do something else
+        cache = await get_permission_cache()
+        await cache.invalidate_all_for_user(user_id)
 
         print(f"✅ Cache invalidated for user {user_id}")
 
@@ -84,6 +85,12 @@ class AuthEventConsumer:
 
     async def handle_user_deactivated(self, event_data: dict):
         """Handle user deactivation - invalidate everything"""
+        user_id = event_data["user_id"]
+
+        print(f"🚫 User {user_id} deactivated")
+        
+    async def handle_user_permission_granted(self, event_data: dict):
+        """Handle user permission granted - invalidate everything"""
         user_id = event_data["user_id"]
 
         print(f"🚫 User {user_id} deactivated")

@@ -20,6 +20,7 @@ from app.core.db import Base
 from app.core.db import async_engine as engine
 from app.core.utils import cache, queue
 from app.messaging.auth_event_consumer import AuthEventConsumer
+from app.messaging.emp_event_consumer import EmployeeEventConsumer
 from app.messaging.rabbitmq import get_rabbitmq_client
 from app.models import *  # noqa: F403
 from arq import create_pool
@@ -66,7 +67,9 @@ async def set_threadpool_tokens(number_of_tokens: int = 100) -> None:
 async def start_event_consumer():
     """Start event consumer on app startup"""
     consumer = AuthEventConsumer(settings.RABBITMQ_URL)
+    consumer2 = EmployeeEventConsumer(settings.RABBITMQ_URL)
     asyncio.create_task(consumer.start())
+    asyncio.create_task(consumer2.start())
 
 
 def lifespan_factory(

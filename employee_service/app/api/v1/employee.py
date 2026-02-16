@@ -6,11 +6,12 @@ from app.core.db import SessionDep
 from app.core.dependencies.auth import check_permission, get_current_user_from_token
 from app.core.shared.auth.jwt_utils import TokenData
 from app.messaging.rabbitmq import RabbitMQDep
-from employee_service.app.schemas.employee import (
+from app.schemas.employee import (
     EmployeeCreate,
     EmployeeResponse,
     EmployeeUpdate,
     EmployeeWithRelations,
+    TerminationRequest,
 )
 from app.services.employee import EmployeeService
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -22,26 +23,28 @@ router = APIRouter()
 async def create_employee(
     employee_data: EmployeeCreate,
     db: SessionDep,
+    rabbitmq: RabbitMQDep,
     current_user=Depends(check_permission("employee:write")),
 ):
     """Create a new employee"""
-    employee = await EmployeeService.create_employee(db, employee_data)
+    employee = await EmployeeService.create_employee(db, rabbitmq, employee_data)
     return employee
 
 
 @router.post(
     "/sign-up", response_model=EmployeeResponse, status_code=status.HTTP_201_CREATED
 )
-async def create_employee(
+async def continue_user_signup(
     employee_data: EmployeeCreate,
     db: SessionDep,
+    rabbitmq: RabbitMQDep,
     current_user: TokenData = Depends(get_current_user_from_token),
 ):
     """Create employee details for just signed up user"""
     # payload = employee_data.model_copy(update={"user_id": current_user.user_id})
     # employee = await EmployeeService.create_employee(db, payload)
     employee_data.user_id = current_user.user_id
-    employee = await EmployeeService.create_employee(db, employee_data)
+    employee = await EmployeeService.create_employee(db, rabbitmq, employee_data)
     return employee
 
 
@@ -109,60 +112,13 @@ async def update_employee(
 
 @router.post("/{employee_id}/terminate", response_model=EmployeeResponse)
 async def terminate_employee(
-    employee_id: str,
-    termination_date: date,
-    db: SessionDep,
-    current_user=Depends(check_permission("employee:write")),
-):
-    """Terminate an employee"""
-    employee = await EmployeeService.terminate_employee(
-        db, employee_id, termination_date
-    )
-    return employee
-
-
-# TODO: The correct endpoint for full signup on both auth and employee service
-@router.post(
-    "/with-account",
-    response_model=EmployeeResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_employee_with_account(
-    employee_data: EmployeeCreate,
-    username: str,
-    password: str,
+    payload: TerminationRequest,
     db: SessionDep,
     rabbitmq: RabbitMQDep,
     current_user=Depends(check_permission("employee:write")),
 ):
-    """Create employee and user account in auth service"""
-    from app.clients.auth import AuthServiceClient
-    from app.core.config import settings
-
-    # 1. Create employee in Employee Management service
-    employee = await EmployeeService.create_employee_with_events(
-        db, employee_data, rabbitmq
-    )
-
-    # 2. Create user account in Auth service
-    auth_client = AuthServiceClient(settings.AUTH_SERVICE_URL)
-    try:
-        await auth_client.create_user_account(
-            employee_id=str(employee.id),
-            username=username,
-            email=employee.email,
-            password=password,
-            auth_token=current_user.access_token,  # Pass through from request
-        )
-    except httpx.HTTPError as e:
-        # Rollback employee creation if auth service fails
-        await db.delete(employee)
-        await db.commit()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create user account: {str(e)}",
-        )
-
+    """Terminate an employee"""
+    employee = await EmployeeService.terminate_employee(db, rabbitmq, payload)
     return employee
 
 

@@ -11,7 +11,9 @@ from app.schemas.auth import (
     RoleWithPermissions,
 )
 from app.services.roles import RoleService
+from app.services.auth import AuthService
 from fastapi import APIRouter, Depends, HTTPException, status
+from app.core.shared.cache.permissions import PermissionsDep
 
 router = APIRouter()
 
@@ -58,13 +60,15 @@ async def get_role(
 async def assign_role_to_user(
     db: SessionDep,
     rabbitmq: RabbitMQDep,
-    request: AssignRoleRequest,
+    cache: PermissionsDep,
+    body: AssignRoleRequest,
     current_user: User = Depends(get_current_superuser),
 ):
     """Assign role to user"""
     user_role = await RoleService.assign_role_to_user(
-        db, rabbitmq, request.user_id, request.role_id
+        db, rabbitmq, cache, body.user_id, body.role_id
     )
+    await AuthService.get_user_permissions(db, cache, body.user_id)
     return {"message": "Role assigned successfully"}
 
 
@@ -73,7 +77,9 @@ async def remove_role_from_user(
     user_id: str,
     role_id: str,
     db: SessionDep,
+    cache: PermissionsDep,
     current_user: User = Depends(get_current_superuser),
 ):
     """Remove role from user"""
     await RoleService.remove_role_from_user(db, user_id, role_id)
+    await AuthService.get_user_permissions(db, cache, user_id)

@@ -171,11 +171,12 @@ class AuthService:
         return user
 
     @staticmethod
-    async def create_user(db: AsyncSession, user_data: UserCreate) -> User:
+    async def create_user(db: AsyncSession, rabbitmq:RabbitMQClient, user_data: UserCreate) -> User:
         # TEST
         # await db.execute(delete(User))
-        await db.execute(delete(User).where(User.is_superuser != True))
-        await db.commit()
+        # await db.execute(delete(User).where(User.is_superuser != True))
+        # await db.commit()
+        
         result = await db.execute(
             select(User).where(
                 or_(
@@ -202,6 +203,7 @@ class AuthService:
         db.add(user)
         await db.commit()
         await db.refresh(user)
+        await AuthEventPublisher.publish_user_created(rabbitmq, user.id, user.email)
 
         return user
 

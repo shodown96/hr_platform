@@ -1,11 +1,11 @@
 from typing import List, Optional
 
 from fastapi import HTTPException, status
-from employee_service.app.schemas.employee import DepartmentCreate, DepartmentUpdate
+from app.schemas.employee import DepartmentCreate, DepartmentUpdate
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from employee_service.app.models.employee import Department, Position, Employee
+from app.models.employee import Department, Position, Employee
 
 
 class DepartmentService:
@@ -17,10 +17,10 @@ class DepartmentService:
         """Create a new department"""
 
         # TEST
-        await db.execute(delete(Employee))
-        await db.execute(delete(Position))
-        await db.execute(delete(Department))
-        await db.commit()
+        # await db.execute(delete(Employee))
+        # await db.execute(delete(Position))
+        # await db.execute(delete(Department))
+        # await db.commit()
 
         # Check if department with same name exists
         stmt = select(Department).where(Department.name == department_data.name)

@@ -5,6 +5,7 @@
 - Employee Management Service
 - Payroll Service
 - Time and Attendance Service
+- Audit Service
 
 ## Features
 - FastAPI with async support

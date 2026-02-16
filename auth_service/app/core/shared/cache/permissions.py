@@ -1,8 +1,8 @@
 import json
 from datetime import timedelta
-from typing import List, Optional
-
+from typing import List, Optional,Annotated
 import redis.asyncio as redis
+from fastapi import Depends
 
 
 class PermissionCache:
@@ -80,3 +80,5 @@ async def get_permission_cache() -> PermissionCache:
 
         permission_cache = PermissionCache(settings.REDIS_CACHE_URL)
     return permission_cache
+
+PermissionsDep = Annotated[PermissionCache, Depends(get_permission_cache)]

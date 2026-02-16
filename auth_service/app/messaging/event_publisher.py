@@ -6,6 +6,29 @@ from app.messaging.rabbitmq import RabbitMQClient
 
 class AuthEventPublisher:
     """Publish auth-related events"""
+    @staticmethod
+    async def publish_user_created(
+        rabbitmq: RabbitMQClient,
+        user_id: str,
+        email:str
+    ):
+        """
+        Publish when a user has been created
+        All services listen and invalidate their caches
+        """
+        event = {
+            "event_id": str(uuid4()),
+            "event_type": "user.created",
+            "timestamp": datetime.now(UTC).isoformat(),
+            "user_id": user_id,
+            "email": email,
+        }
+        
+        await rabbitmq.publish_event(
+            routing_key="user.created",
+            event_data=event
+        )
+        print(f"📤 Published permissions changed for user {user_id}")
     
     # Not to be used, permissions should be reset instead
     @staticmethod

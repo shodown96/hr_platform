@@ -1,6 +1,10 @@
 from app.core.db import SessionDep
 from app.core.dependencies.auth import get_current_user
-from app.core.shared.cache.permissions import PermissionCache, get_permission_cache
+from app.core.shared.cache.permissions import (
+    PermissionCache,
+    PermissionsDep,
+    get_permission_cache,
+)
 from app.messaging.rabbitmq import RabbitMQDep
 from app.schemas.auth import (
     ChangePasswordRequest,
@@ -15,6 +19,7 @@ from app.services.auth import AuthService
 from app.services.email import EmailService
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from app.services.roles import RoleService
 
 router = APIRouter()
 
@@ -25,16 +30,16 @@ router = APIRouter()
 async def sign_up(
     user_data: UserCreate,
     db: SessionDep,
+    rabbitmq: RabbitMQDep,
     cache: PermissionCache = Depends(get_permission_cache),
     # dependencies=Depends(anonymous_only),
 ):
     """Sign up as a new user"""
 
-    user = await AuthService.create_user(db, user_data)
+    user = await AuthService.create_user(db, rabbitmq, user_data)
 
-    # TODO: Add basic permissions to the user
+    await RoleService.assign_default_role_to_new_user(db, rabbitmq, user.id)
 
-    # Get user permissions
     permissions = await AuthService.get_user_permissions(db, cache, user.id)
 
     # Create access token
@@ -52,7 +57,11 @@ async def sign_up(
 
 
 @router.post("/sign-in", response_model=TokenResponse)
-async def sign_in(db: SessionDep, form_data: OAuth2PasswordRequestForm = Depends()):
+async def sign_in(
+    db: SessionDep,
+    cache: PermissionsDep,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+):
     """Sign in and get access token"""
     user = await AuthService.authenticate_user(
         db, form_data.username, form_data.password
@@ -66,7 +75,7 @@ async def sign_in(db: SessionDep, form_data: OAuth2PasswordRequestForm = Depends
         )
 
     # Get user permissions
-    permissions = await AuthService.get_user_permissions(db, str(user.id))
+    permissions = await AuthService.get_user_permissions(db, cache, str(user.id))
 
     # Create access token
     access_token = AuthService.create_access_token(

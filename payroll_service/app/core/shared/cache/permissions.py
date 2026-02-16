@@ -23,15 +23,6 @@ class PermissionCache:
         """Generate Redis key for user roles"""
         return f"user_roles:{user_id}"
 
-    async def set_user_permissions(
-        self, user_id: str, permissions: List[str], ttl: Optional[timedelta] = None
-    ):
-        """Store user permissions in cache"""
-        key = self._user_permission_key(user_id)
-        await self.redis_client.setex(
-            key, ttl or self.default_ttl, json.dumps(permissions)
-        )
-
     async def get_user_permissions(self, user_id: str) -> Optional[List[str]]:
         """Get user permissions from cache"""
         key = self._user_permission_key(user_id)
@@ -41,27 +32,12 @@ class PermissionCache:
             return json.loads(data)
         return None
 
-    async def invalidate_user_permissions(self, user_id: str):
-        """Remove user permissions from cache"""
-        key = self._user_permission_key(user_id)
-        await self.redis_client.delete(key)
-
     async def set_user_roles(
         self, user_id: str, roles: List[str], ttl: Optional[timedelta] = None
     ):
         """Store user roles in cache"""
         key = self._user_roles_key(user_id)
         await self.redis_client.setex(key, ttl or self.default_ttl, json.dumps(roles))
-
-    async def invalidate_user_roles(self, user_id: str):
-        """Remove user roles from cache"""
-        key = self._user_roles_key(user_id)
-        await self.redis_client.delete(key)
-
-    async def invalidate_all_for_user(self, user_id: str):
-        """Invalidate all cached data for a user"""
-        await self.invalidate_user_permissions(user_id)
-        await self.invalidate_user_roles(user_id)
 
     async def close(self):
         """Close Redis connection"""

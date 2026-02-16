@@ -10,8 +10,10 @@ from app.schemas.auth import (
     UserPermissionResponse,
 )
 from app.services.permissions import PermissionService
+from app.services.auth import AuthService
 from fastapi import APIRouter, Depends, status
 from typing import List
+from app.core.shared.cache.permissions import PermissionsDep
 
 router = APIRouter()
 
@@ -47,24 +49,25 @@ async def get_permissions(
 @router.get("/user-permissions/{user_id}", response_model=List[UserPermissionResponse])
 async def get_user_permissions(
     user_id: str,
+    cache: PermissionsDep,
     db: SessionDep,
     current_user: User = Depends(check_permission("role:read")),
 ):
     """Get user permissions"""
-    roles = await PermissionService.get_user_permissions(db, user_id)
+    permissions = await AuthService.get_user_permissions(db, cache, user_id)
 
-    return roles
+    return permissions
 
 
 @router.post("/assign-permission-to-role", status_code=status.HTTP_200_OK)
 async def assign_permission_to_role(
-    request: AssignPermissionToRoleRequest,
+    body: AssignPermissionToRoleRequest,
     db: SessionDep,
     current_user: User = Depends(get_current_superuser),
 ):
     """Assign permission to role"""
     role_perm = await PermissionService.assign_permission_to_role(
-        db, request.role_id, request.permission_id
+        db, body.role_id, body.permission_id
     )
     return {"message": "Permission assigned successfully"}
 
@@ -86,15 +89,18 @@ async def remove_permission_from_role(
 
 @router.post("/grant-permission-to-user", status_code=status.HTTP_200_OK)
 async def grant_permission_to_user(
-    request: AssignPermissionToUserRequest,
+    body: AssignPermissionToUserRequest,
     db: SessionDep,
+    cache: PermissionsDep,
     rabbitmq: RabbitMQDep,
     current_user: User = Depends(get_current_superuser),
 ):
     """Assign permission to role"""
     role_perm = await PermissionService.grant_permission_to_user(
-        db, rabbitmq, request.user_id, request.permission_id
+        db, rabbitmq, body.user_id, body.permission_id
     )
+    # Get user permissions
+    permissions = await AuthService.get_user_permissions(db, cache, body.user_id)
     return {"message": "Permission assigned successfully"}
 
 
