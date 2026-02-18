@@ -20,7 +20,7 @@ STATUS_UNHEALTHY = "unhealthy"
 LOGGER = logging.getLogger(__name__)
 
 
-@router.get("/health", response_model=HealthCheck)
+@router.get("/", response_model=HealthCheck)
 async def health():
     http_status = status.HTTP_200_OK
     response = {
