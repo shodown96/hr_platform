@@ -49,21 +49,20 @@ Used only when a real-time response is needed — primarily when a service has a
 ### Hiring a New Employee
 
 ```
-HR Admin creates employee record in Employee Service
-        ↓
-Employee Service calls Auth Service to create a user account (HTTP)
+HR Admin creates a user account in Auth Service (POST /users/create-user)
         ↓
 Auth Service creates the user, assigns default "employee" role
+        ↓
+Auth Service publishes: user.created
+        ↓
+HR Admin creates the employee record in Employee Service, linking it
+to the user account via user_id (POST /employees)
         ↓
 Employee Service publishes: employee.created
         ↓
 Payroll Service receives event → creates salary placeholder
         ↓
 (Future) Benefits Service receives event → enrols in benefits
-        ↓
-Auth Service sends invitation email to the employee
-        ↓
-Employee clicks link, sets password → account is active
 ```
 
 ---
@@ -264,15 +263,20 @@ Employee logs in normally with new password
 
 | Event | When | Who Reacts |
 |---|---|---|
+| `user.created` | New user account created | — |
 | `user.role.assigned` | Role added to user | All services — clear permission cache |
 | `user.role.removed` | Role removed from user | All services — clear permission cache |
-| `user.permissions.changed` | Permission directly granted/revoked | All services — clear permission cache |
+| `user.permission.granted` | Permission directly granted to user | All services — clear permission cache |
+| `user.permission.removed` | Permission directly revoked from user | All services — clear permission cache |
 | `user.deactivated` | User account disabled | All services — block access, clear cache |
+| `user.password.changed` | User changed their password | Audit |
+| `user.password.reset` | User reset their password via OTP | Audit |
 
 ### Auth Service — Listens
 
 | Event | From | Action Taken |
 |---|---|---|
+| `employee.created` | Employee Service | Link employee record to user |
 | `employee.terminated` | Employee Service | Deactivate user account |
 | `employee.updated` | Employee Service | Sync email if it changed |
 | `employee.position.changed` | Employee Service | Clear permission cache |
@@ -296,6 +300,7 @@ Employee logs in normally with new password
 |---|---|---|
 | `user.role.assigned` | Auth Service | Clear permission cache for that user |
 | `user.role.removed` | Auth Service | Clear permission cache for that user |
+| `user.permission.granted` | Auth Service | Clear permission cache for that user |
 | `user.deactivated` | Auth Service | Clear permission cache for that user |
 
 ---
@@ -313,6 +318,8 @@ Employee logs in normally with new password
 
 | Event | From | Action Taken |
 |---|---|---|
+| `employee.created` | Employee Service | Create salary placeholder |
+| `employee.updated` | Employee Service | Update local employee copy |
 | `employee.terminated` | Employee Service | Deactivate salary, cancel future payrolls |
 | `employee.department.changed` | Employee Service | Flag salary for review |
 | `employee.position.changed` | Employee Service | Flag salary for review |

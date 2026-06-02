@@ -73,7 +73,7 @@ async def test_auth_to_employee_profile_flow():
         pos_res = await employee_client.post(
             "/api/v1/positions/positions",
             json={
-                "title": "HR Manager",
+                "name": "HR Manager",
                 "department_id": department_id,
             },
             headers=admin_headers,

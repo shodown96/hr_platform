@@ -28,7 +28,7 @@ class EmployeeEventConsumer:
             "auth_service_employee_events", durable=True
         )
 
-        await queue.bind(exchange, routing_key="employee.*")
+        await queue.bind(exchange, routing_key="employee.#")
 
         await queue.consume(self.process_message)
         print("✅ Auth Service: Listening for employee events")
