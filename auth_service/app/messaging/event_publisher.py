@@ -142,9 +142,9 @@ class AuthEventPublisher:
             "permission_id": permission_id,
             "permission_name": permission_name
         }
-        
+
         await rabbitmq.publish_event(
-            routing_key="user.role.removed",
+            routing_key="user.permission.removed",
             event_data=event
         )
            

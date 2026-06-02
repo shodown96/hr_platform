@@ -28,7 +28,7 @@ async def get_users(
 
 
 @router.get("/admins", response_model=List[UserWithRoles])
-async def get_users(
+async def get_admin_users(
     db: SessionDep,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
@@ -50,9 +50,9 @@ async def create_user(
     ),  # Only superusers can create users
 ):
     """Create a new user as an admin"""
-    user = await AuthService.create_user(db, user_data)
+    user = await AuthService.create_user(db, rabbitmq, user_data)
 
-    await RoleService.assign_default_role_to_new_user(db, rabbitmq, user.id)
+    await RoleService.assign_default_role_to_new_user(db, rabbitmq, cache, user.id)
 
     permissions = await AuthService.get_user_permissions(db, cache, user.id)
 

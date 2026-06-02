@@ -1,0 +1,40 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes (unused imports, undefined names)
+    "I",   # isort (import ordering)
+    "UP",  # pyupgrade (modern Python syntax)
+    "B",   # flake8-bugbear (common bugs)
+    "RUF", # ruff-specific rules
+]
+ignore = [
+    "E501", # line too long (formatter handles this)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*/migrations/*" = ["F401"]
+"*/alembic/*"    = ["F401"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+ignore_missing_imports = true   # avoids noise from untyped third-party libs
+disallow_untyped_defs = true    # all functions must have type annotations
+warn_return_any = true
+warn_unused_ignores = true
+plugins = ["sqlalchemy.ext.mypy.plugin"]
+
+# Per-module overrides for noisy third-party libs
+[[tool.mypy.overrides]]
+module = ["passlib.*", "aio_pika.*", "arq.*", "fastcrud.*"]
+ignore_missing_imports = true
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"       # "strict" if you want tsc-strict equivalent
+reportMissingImports = true
+reportMissingModuleSource = false

@@ -16,7 +16,7 @@ from app.core.config import (
     RedisQueueSettings,
     settings,
 )
-from app.core.db import Base, SessionDep
+from app.core.db import Base, local_session  # noqa: F401 (Base used by wildcard import below)
 from app.core.db import async_engine as engine
 from app.core.utils import cache, queue
 from app.messaging.emp_event_consumer import EmployeeEventConsumer
@@ -58,7 +58,7 @@ async def close_redis_queue_pool() -> None:
 
 # -------------- application --------------
 async def set_threadpool_tokens(number_of_tokens: int = 100) -> None:
-    limiter = anyio.to_thread.current_default_thread_limiter()
+    limiter = anyio.to_thread.current_default_thread_limiter()  # type: ignore[attr-defined]
     limiter.total_tokens = number_of_tokens
 
 
@@ -102,6 +102,32 @@ def lifespan_factory(
 
             if create_tables_on_start:
                 await create_tables()
+
+            from app.services.roles import RoleService
+            from app.services.auth import AuthService
+            from app.models.auth import User
+            from app.scripts.seed_permissions import seed_permissions
+            from app.core.config import settings as _settings
+            from sqlalchemy import select as sa_select
+
+            async with local_session() as db:
+                await seed_permissions(db)
+
+                # Seed the default admin user if one doesn't exist yet
+                result = await db.execute(
+                    sa_select(User).where(User.is_superuser == True)  # noqa: E712
+                )
+                if not result.scalar_one_or_none():
+                    admin = User(
+                        username=_settings.ADMIN_USERNAME,
+                        email=_settings.ADMIN_EMAIL,
+                        password_hash=AuthService.hash_password(_settings.ADMIN_PASSWORD),
+                        is_superuser=True,
+                        is_active=True,
+                    )
+                    db.add(admin)
+                    await db.commit()
+                    print(f"✅ Admin user seeded: {_settings.ADMIN_USERNAME}")
 
             if isinstance(settings, RabbitMQSettings):
                 # Initialize RabbitMQ

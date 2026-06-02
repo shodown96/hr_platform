@@ -1,16 +1,14 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime, UTC
 from typing import Optional
 
 
 class BaseResponseSchema(BaseModel):
-    """Base response schema with common fields"""
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     created_at: datetime
     updated_at: datetime
-    
-    class Config:
-        from_attributes = True
 
 
 class PaginationParams(BaseModel):

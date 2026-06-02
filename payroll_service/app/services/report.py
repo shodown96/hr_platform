@@ -15,7 +15,7 @@ from reportlab.platypus import (
 )
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 
-from models.payroll import PayrollRecord, SalaryComponent
+from app.models.payroll import PayrollRecord, SalaryComponent
 
 
 class PayrollReportService:

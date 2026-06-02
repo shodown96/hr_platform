@@ -68,7 +68,7 @@ class DepartmentService:
         """Get all departments"""
         stmt = select(Department).offset(skip).limit(limit)
         result = await db.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     @staticmethod
     async def update_department(

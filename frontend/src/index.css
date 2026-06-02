@@ -1,0 +1,265 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f4f5f7;
+  color: #1a1a2e;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── Auth ─────────────────────────────────────── */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+.auth-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 2.25rem 2rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.auth-card h1 { color: #2563eb; font-size: 1.4rem; margin-bottom: 0.2rem; }
+.auth-card h2 { color: #555; font-size: 1rem; font-weight: 500; margin-bottom: 1.5rem; }
+.auth-card p { margin-top: 1rem; text-align: center; color: #666; }
+.auth-card a { color: #2563eb; text-decoration: none; font-weight: 500; }
+.auth-card a:hover { text-decoration: underline; }
+
+/* ── Layout ───────────────────────────────────── */
+.page { min-height: 100vh; display: flex; flex-direction: column; }
+
+.page-header {
+  background: #1a1a2e;
+  color: #fff;
+  padding: 0.875rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.page-header h1 { font-size: 1.1rem; font-weight: 600; letter-spacing: 0.025em; }
+.user-info { display: flex; align-items: center; gap: 0.75rem; }
+.user-info span { color: #9ca3af; font-size: 0.875rem; }
+
+/* ── Tabs ─────────────────────────────────────── */
+.tabs {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 2rem;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.tab {
+  padding: 0.75rem 1.1rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #6b7280;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab:hover { color: #2563eb; }
+.tab.active { color: #2563eb; border-bottom-color: #2563eb; font-weight: 500; }
+
+/* ── Content area ─────────────────────────────── */
+.content {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ── Card / Section ───────────────────────────── */
+.section {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid #e5e7eb;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.section-header h2 { margin-bottom: 0; }
+.section h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #1a1a2e; }
+.section h3 { font-size: 0.9rem; font-weight: 600; color: #374151; margin: 1.25rem 0 0.75rem; }
+
+/* ── Info grid ────────────────────────────────── */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0.625rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+.info-grid > div { color: #374151; }
+.info-grid strong { color: #111; margin-right: 0.25rem; }
+
+/* ── Form ─────────────────────────────────────── */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.field { display: flex; flex-direction: column; gap: 0.3rem; }
+.field label { font-size: 0.78rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em; }
+
+.field input,
+.field select,
+.field textarea {
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  outline: none;
+  background: #fff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+.field textarea { resize: vertical; min-height: 80px; }
+
+/* ── Table ────────────────────────────────────── */
+.table-wrap { overflow-x: auto; }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.data-table th {
+  text-align: left;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 2px solid #e5e7eb;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover td { background: #f9fafb; }
+
+/* ── Buttons ──────────────────────────────────── */
+button {
+  padding: 0.5rem 1.1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background 0.15s, opacity 0.15s;
+}
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+button[type='submit'],
+.btn-primary { background: #2563eb; color: #fff; }
+button[type='submit']:hover:not(:disabled),
+.btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+
+.btn-secondary { background: transparent; color: #9ca3af; border: 1px solid #374151; }
+.btn-secondary:hover:not(:disabled) { border-color: #9ca3af; color: #fff; }
+
+.btn-danger { background: #dc2626; color: #fff; }
+.btn-danger:hover:not(:disabled) { background: #b91c1c; }
+
+.btn-success { background: #16a34a; color: #fff; }
+.btn-success:hover:not(:disabled) { background: #15803d; }
+
+.btn-sm { padding: 0.3rem 0.65rem; font-size: 0.8rem; }
+
+/* ── Status badges ────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+.badge.active, .badge.completed { background: #dcfce7; color: #166534; }
+.badge.pending, .badge.processing, .badge.on_leave { background: #fef3c7; color: #92400e; }
+.badge.terminated, .badge.failed, .badge.cancelled, .badge.suspended { background: #fee2e2; color: #991b1b; }
+.badge.inactive { background: #f3f4f6; color: #6b7280; }
+
+/* ── Feedback messages ────────────────────────── */
+.msg-error { color: #dc2626; font-size: 0.875rem; margin: 0.5rem 0; }
+.msg-ok    { color: #16a34a; font-size: 0.875rem; margin: 0.5rem 0; }
+
+/* ── Modal ────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+.modal {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+.modal-header h3 { font-size: 1rem; font-weight: 600; }
+.modal-close { background: none; border: none; font-size: 1.25rem; color: #9ca3af; cursor: pointer; padding: 0.1rem 0.4rem; }
+.modal-close:hover { color: #111; }
+.modal-footer { margin-top: 1.25rem; display: flex; justify-content: flex-end; gap: 0.75rem; }
+
+/* ── Misc ─────────────────────────────────────── */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: #9ca3af;
+  font-size: 0.95rem;
+}
+.empty { color: #9ca3af; font-size: 0.875rem; padding: 1.5rem 0; text-align: center; }
+.actions { display: flex; gap: 0.4rem; align-items: center; }

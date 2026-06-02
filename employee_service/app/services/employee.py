@@ -8,7 +8,7 @@ from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.employee import Department, Employee, Position
+from app.models.employee import Department, Employee, EmploymentStatus, Position
 from app.schemas.employee import EmployeeCreate, EmployeeUpdate, TerminationRequest
 
 
@@ -32,7 +32,6 @@ class EmployeeService:
             or_(
                 Employee.user_id == employee_data.user_id,
                 Employee.email == employee_data.email,
-                Employee.employee_code == employee_data.employee_code,
             )
         )
         result = await db.execute(stmt)
@@ -74,7 +73,7 @@ class EmployeeService:
                 )
         statement = select(func.count()).select_from(Employee)
         result = await db.execute(statement)
-        count: int = result.scalar()
+        count: int = result.scalar() or 0
         employee_data.employee_code = f"EMP{count:05}"
         print("employee_data", employee_data)
         employee = Employee(**employee_data.model_dump())
@@ -172,7 +171,7 @@ class EmployeeService:
 
         stmt = stmt.offset(skip).limit(limit)
         result = await db.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     @staticmethod
     async def update_employee(
@@ -234,7 +233,7 @@ class EmployeeService:
                 status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found"
             )
 
-        employee.employment_status = "terminated"
+        employee.employment_status = EmploymentStatus.TERMINATED
         employee.termination_date = payload.termination_date
 
         await db.commit()

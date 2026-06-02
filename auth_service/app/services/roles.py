@@ -47,7 +47,6 @@ class RoleService:
                 name=r.name,
                 description=r.description,
                 created_at=r.created_at,
-                updated_at=r.updated_at,
                 permissions=[
                     PermissionResponse.model_validate(rp.permission)
                     for rp in r.role_permissions
@@ -75,7 +74,6 @@ class RoleService:
             name=role.name,
             description=role.description,
             created_at=role.created_at,
-            updated_at=role.updated_at,
             permissions=[
                 PermissionResponse.model_validate(rp.permission)
                 for rp in role.role_permissions
@@ -165,16 +163,33 @@ class RoleService:
 
     @staticmethod
     async def assign_default_role_to_new_user(
-        db: AsyncSession, rabbitmq: RabbitMQClient, user_id: str
-    ) -> UserRole:
-
+        db: AsyncSession, rabbitmq: RabbitMQClient, cache: PermissionCache, user_id: str
+    ) -> Role:
         stmt = select(Role).where(Role.name == "employee")
         result = await db.execute(stmt)
         employee_role = result.scalar_one_or_none()
 
-        # Assign role to user
+        if not employee_role:
+            employee_role = Role(name="employee", description="Default role for employees")
+            db.add(employee_role)
+            await db.commit()
+            await db.refresh(employee_role)
+
         await RoleService.assign_role_to_user(
-            db, rabbitmq, str(user_id), str(employee_role.id)
+            db, rabbitmq, cache, str(user_id), str(employee_role.id)
         )
 
         return employee_role
+
+    @staticmethod
+    async def seed_default_roles(db: AsyncSession) -> None:
+        """Ensure default roles exist. Called once on startup."""
+        defaults = [
+            ("employee", "Default role for employees"),
+            ("admin", "Administrative role with elevated permissions"),
+        ]
+        for name, description in defaults:
+            result = await db.execute(select(Role).where(Role.name == name))
+            if not result.scalar_one_or_none():
+                db.add(Role(name=name, description=description))
+        await db.commit()

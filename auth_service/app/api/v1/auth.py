@@ -38,7 +38,7 @@ async def sign_up(
 
     user = await AuthService.create_user(db, rabbitmq, user_data)
 
-    await RoleService.assign_default_role_to_new_user(db, rabbitmq, user.id)
+    await RoleService.assign_default_role_to_new_user(db, rabbitmq, cache, user.id)
 
     permissions = await AuthService.get_user_permissions(db, cache, user.id)
 

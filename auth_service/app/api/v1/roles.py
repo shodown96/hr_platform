@@ -77,9 +77,10 @@ async def remove_role_from_user(
     user_id: str,
     role_id: str,
     db: SessionDep,
+    rabbitmq: RabbitMQDep,
     cache: PermissionsDep,
     current_user: User = Depends(get_current_superuser),
 ):
     """Remove role from user"""
-    await RoleService.remove_role_from_user(db, user_id, role_id)
+    await RoleService.remove_role_from_user(db, rabbitmq, user_id, role_id)
     await AuthService.get_user_permissions(db, cache, user_id)

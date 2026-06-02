@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from enum import Enum as PyEnum
 
 
@@ -49,15 +49,14 @@ class EmployeeSalaryUpdate(BaseModel):
 
 
 class EmployeeSalaryResponse(EmployeeSalaryBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     effective_from: date
     effective_to: Optional[date]
     is_active: bool
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 # Salary Component Schemas
@@ -72,11 +71,10 @@ class SalaryComponentCreate(SalaryComponentBase):
 
 
 class SalaryComponentResponse(SalaryComponentBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 # Payroll Record Schemas
@@ -99,6 +97,8 @@ class PayrollRecordUpdate(BaseModel):
 
 
 class PayrollRecordResponse(PayrollRecordBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     employee_salary_id: str
     gross_salary: float
@@ -111,9 +111,6 @@ class PayrollRecordResponse(PayrollRecordBase):
     notes: Optional[str]
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class PayrollRecordWithComponents(PayrollRecordResponse):

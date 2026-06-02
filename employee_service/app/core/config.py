@@ -141,7 +141,7 @@ class EnvironmentSettings(BaseSettings):
 
 
 class CORSSettings(BaseSettings):
-    CORS_ORIGINS: list[str] = ["*"]
+    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
     CORS_METHODS: list[str] = ["*"]
     CORS_HEADERS: list[str] = ["*"]
 

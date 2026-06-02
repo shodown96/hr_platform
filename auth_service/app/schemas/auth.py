@@ -29,7 +29,7 @@ class UserCreate(UserBase):
     ]
 
 
-class UserCreateInternal(UserBase):
+class UserCreateInternal(UserCreate):
     password: Annotated[
         str,
         Field(
@@ -103,7 +103,6 @@ class RoleResponse(RoleBase):
 
     id: str
     created_at: datetime
-    updated_at: datetime
 
 
 class RoleWithPermissions(RoleResponse):

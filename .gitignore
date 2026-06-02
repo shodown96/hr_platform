@@ -9,3 +9,5 @@ crudadmin_data
 .DS_Store
 deploy-to-lambda.yml
 .pytest_cache
+dist
+node_modules

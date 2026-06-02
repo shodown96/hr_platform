@@ -141,7 +141,7 @@ class EnvironmentSettings(BaseSettings):
 
 
 class CORSSettings(BaseSettings):
-    CORS_ORIGINS: list[str] = ["*"]
+    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
     CORS_METHODS: list[str] = ["*"]
     CORS_HEADERS: list[str] = ["*"]
 
@@ -151,8 +151,8 @@ class RabbitMQSettings(BaseSettings):
 
 
 class MicroserviceSettings(BaseSettings):
-    # Auth Service
     AUTH_SERVICE_URL: str = "http://localhost:8000"
+    EMPLOYEE_SERVICE_URL: str = "http://localhost:8001"
 
 
 class Settings(

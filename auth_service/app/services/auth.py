@@ -234,7 +234,6 @@ class AuthService:
                     name=ur.role.name,
                     description=ur.role.description,
                     created_at=ur.role.created_at,
-                    updated_at=ur.role.updated_at,
                 )
                 for ur in user.user_roles
             ],
@@ -275,8 +274,7 @@ class AuthService:
                         name=ur.role.name,
                         description=ur.role.description,
                         created_at=ur.role.created_at,
-                        updated_at=ur.role.updated_at,
-                    )
+                        )
                     for ur in user.user_roles
                     if ur.role is not None
                 ],
@@ -372,9 +370,10 @@ class AuthService:
             for up in user.user_permissions
         }
 
-        await cache.set_user_permissions(user_id, permissions)
+        permissions_list = list(permissions)
+        await cache.set_user_permissions(user_id, permissions_list)
 
-        return list(permissions)
+        return permissions_list
 
     # TODO: implement this, probably redundant
     @staticmethod

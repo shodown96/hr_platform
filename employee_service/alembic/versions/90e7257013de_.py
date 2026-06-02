@@ -37,7 +37,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_departments_id'), 'departments', ['id'], unique=True)
     op.create_index(op.f('ix_departments_is_deleted'), 'departments', ['is_deleted'], unique=False)
     op.create_table('positions',
-    sa.Column('title', sa.String(length=100), nullable=False),
+    sa.Column('name', sa.String(length=100), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('level', sa.String(length=50), nullable=True),
     sa.Column('department_id', sa.String(length=36), nullable=False),

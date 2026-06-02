@@ -1,12 +1,14 @@
 from datetime import date
 from typing import List, Optional
 
+from app.clients.employee import EmployeeServiceClient
+from app.core.config import settings
 from app.core.db import SessionDep
-from app.core.dependencies.auth import check_permission, get_current_user_from_token
+from app.core.dependencies.auth import check_permission, oauth2_scheme
 from app.core.shared.auth.jwt_utils import TokenData
 from app.services.payroll import EmployeeSalaryService, PayrollService
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from schemas.payroll import (
+from app.schemas.payroll import (
     EmployeeSalaryCreate,
     EmployeeSalaryResponse,
     PayrollRecordCreate,
@@ -160,29 +162,43 @@ async def get_payroll_summary(
 # Employee Self-Service
 
 
+async def _resolve_employee_id(token: str) -> str:
+    """Resolve the current user's employee ID by calling the employee service."""
+    client = EmployeeServiceClient(settings.EMPLOYEE_SERVICE_URL)
+    try:
+        profile = await client.get_my_profile(token)
+        return profile["id"]
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Employee profile not found for current user",
+        )
+
+
 @router.get("/my-payroll", response_model=List[PayrollRecordResponse])
 async def get_my_payroll_records(
     db: SessionDep,
+    token: str = Depends(oauth2_scheme),
     year: Optional[int] = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(12, ge=1, le=12),
-    current_user: TokenData = Depends(get_current_user_from_token),
 ):
     """Get own payroll records (employee self-service)"""
+    employee_id = await _resolve_employee_id(token)
     payrolls = await PayrollService.get_employee_payroll_records(
-        db, current_user.employee_id, year, skip, limit
+        db, employee_id, year, skip, limit
     )
     return payrolls
 
 
 @router.get("/my-salary", response_model=EmployeeSalaryResponse)
 async def get_my_current_salary(
-    db: SessionDep, current_user: TokenData = Depends(get_current_user_from_token)
+    db: SessionDep,
+    token: str = Depends(oauth2_scheme),
 ):
     """Get own current salary (employee self-service)"""
-    salary = await EmployeeSalaryService.get_employee_salary(
-        db, current_user.employee_id
-    )
+    employee_id = await _resolve_employee_id(token)
+    salary = await EmployeeSalaryService.get_employee_salary(db, employee_id)
     if not salary:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No salary record found"

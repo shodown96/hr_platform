@@ -58,7 +58,7 @@ async def close_redis_queue_pool() -> None:
 
 # -------------- application --------------
 async def set_threadpool_tokens(number_of_tokens: int = 100) -> None:
-    limiter = anyio.to_thread.current_default_thread_limiter()
+    limiter = anyio.to_thread.current_default_thread_limiter()  # type: ignore[attr-defined]
     limiter.total_tokens = number_of_tokens
 
 

@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from app.messaging.rabbitmq import RabbitMQClient
 from fastapi import HTTPException, status
-from schemas.payroll import (
+from app.schemas.payroll import (
     EmployeeSalaryCreate,
     PayrollRecordCreate,
     PayrollRecordUpdate,
@@ -14,7 +14,7 @@ from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from models.payroll import (
+from app.models.payroll import (
     EmployeeSalary,
     PaymentStatus,
     PayrollRecord,

@@ -2,7 +2,7 @@
 import json
 
 import aio_pika
-from app.core.db import AsyncSession
+from app.core.db import local_session
 from app.models.auth import User
 from sqlalchemy import select
 from datetime import datetime, date
@@ -79,7 +79,7 @@ class EmployeeEventConsumer:
         if "email" in updated_fields:
             new_email = event_data.get("email")
             
-            async with AsyncSession() as db:
+            async with local_session() as db:
                 stmt = select(User).where(User.id == user_id)
                 result = await db.execute(stmt)
                 user = result.scalar_one_or_none()
@@ -103,7 +103,7 @@ class EmployeeEventConsumer:
         termination_date = event_data.get("termination_date")
         reason = event_data.get("reason")
         
-        async with AsyncSession() as db:
+        async with local_session() as db:
             stmt = select(User).where(User.id == user_id)
             result = await db.execute(stmt)
             user = result.scalar_one_or_none()

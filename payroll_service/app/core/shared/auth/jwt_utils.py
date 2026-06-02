@@ -8,6 +8,7 @@ class TokenData(BaseModel):
     """Data stored in JWT token"""
 
     user_id: str
+    username: Optional[str] = None
     is_superuser: bool
     permissions: List[str] = []
     exp: Optional[datetime] = None
@@ -30,7 +31,7 @@ class JWTManager:
                 username=payload.get("username"),
                 is_superuser=payload.get("is_superuser", False),
                 permissions=payload.get("permissions", []),
-                exp=datetime.fromtimestamp(payload.get("exp")),
+                exp=datetime.fromtimestamp(payload["exp"]) if payload.get("exp") else None,
             )
 
             return token_data

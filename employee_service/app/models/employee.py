@@ -59,7 +59,7 @@ class Department(BaseModel):
 class Position(BaseModel):
     __tablename__ = "positions"
 
-    title: Mapped[str] = mapped_column(String(100), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     level: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     department_id: Mapped[str] = mapped_column(

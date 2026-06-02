@@ -97,7 +97,7 @@ async def grant_permission_to_user(
 ):
     """Assign permission to role"""
     role_perm = await PermissionService.grant_permission_to_user(
-        db, rabbitmq, body.user_id, body.permission_id
+        db, rabbitmq, cache, body.user_id, body.permission_id
     )
     # Get user permissions
     permissions = await AuthService.get_user_permissions(db, cache, body.user_id)
@@ -108,7 +108,7 @@ async def grant_permission_to_user(
     "/remove-permission-from-user/{user_id}/{permission_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def remove_permission_from_role(
+async def remove_permission_from_user(
     permission_id: str,
     user_id: str,
     rabbitmq: RabbitMQDep,

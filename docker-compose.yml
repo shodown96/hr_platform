@@ -10,6 +10,11 @@ services:
       - "5432:5432"
     volumes:
       - auth_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   # PostgreSQL for Employee Service
   employee_db:
@@ -22,48 +27,150 @@ services:
       - "5433:5432"
     volumes:
       - employee_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d employee_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # PostgreSQL for Payroll Service
+  payroll_db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: payroll_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - payroll_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d payroll_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Redis (shared — used by all services for permission caching)
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   # RabbitMQ
   rabbitmq:
     image: rabbitmq:3-management
     ports:
-      - "5672:5672" # AMQP port
-      - "15672:15672" # Management UI
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
 
   # Auth Service
   auth_service:
-    build: ./auth-service
+    build: ./auth_service
     ports:
       - "8001:8000"
+    volumes:
+      - ./auth_service:/app
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@auth_db:5432/auth_db
+      POSTGRES_SERVER: auth_db
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      SECRET_KEY: super-secret-key-change-in-production
+      REDIS_CACHE_HOST: redis
+      REDIS_QUEUE_HOST: redis
     depends_on:
-      - auth_db
-      - rabbitmq
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      auth_db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
   # Employee Service
   employee_service:
-    build: ./employee-service
+    build: ./employee_service
     ports:
       - "8002:8000"
+    volumes:
+      - ./employee_service:/app
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@employee_db:5432/employee_db
+      POSTGRES_SERVER: employee_db
+      POSTGRES_DB: employee_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
       AUTH_SERVICE_URL: http://auth_service:8000
+      SECRET_KEY: super-secret-key-change-in-production
+      REDIS_CACHE_HOST: redis
+      REDIS_QUEUE_HOST: redis
     depends_on:
-      - employee_db
-      - rabbitmq
-      - auth_service
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      employee_db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      auth_service:
+        condition: service_started
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  # Payroll Service
+  payroll_service:
+    build: ./payroll_service
+    ports:
+      - "8003:8000"
+    volumes:
+      - ./payroll_service:/app
+    environment:
+      POSTGRES_SERVER: payroll_db
+      POSTGRES_DB: payroll_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      AUTH_SERVICE_URL: http://auth_service:8000
+      EMPLOYEE_SERVICE_URL: http://employee_service:8000
+      SECRET_KEY: super-secret-key-change-in-production
+      REDIS_CACHE_HOST: redis
+      REDIS_QUEUE_HOST: redis
+    depends_on:
+      payroll_db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      auth_service:
+        condition: service_started
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
 volumes:
   auth_db_data:
   employee_db_data:
+  payroll_db_data:
+  redis_data:
   rabbitmq_data:

@@ -1,7 +1,6 @@
 import enum
 from datetime import date, datetime
 from typing import List, Optional
-from uuid import uuid4
 
 from app.models.base import BaseModel
 from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Numeric, String, Text
@@ -35,120 +34,72 @@ class SalaryComponentType(str, enum.Enum):
 
 
 class EmployeeSalary(BaseModel):
-    """
-    Stores current and historical salary information for employees
-    Each time salary changes, create a new record with new effective dates
-    """
-
     __tablename__ = "employee_salaries"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid4())
-    )
+    # Required fields first (no defaults)
     employee_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
-
-    # Salary amount
     basic_salary: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
-    currency: Mapped[str] = mapped_column(String(3), default="USD")
-
-    # Payment frequency
     payment_frequency: Mapped[PaymentFrequency] = mapped_column(
         Enum(PaymentFrequency), nullable=False
     )
-
-    # Effective dates
     effective_from: Mapped[date] = mapped_column(Date, nullable=False)
-    effective_to: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+
+    # Optional / defaulted fields after
+    currency: Mapped[str] = mapped_column(String(3), default="USD")
+    effective_to: Mapped[Optional[date]] = mapped_column(Date, nullable=True, default=None)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-
-    # Relationships
     payroll_records: Mapped[List["PayrollRecord"]] = relationship(
-        "PayrollRecord", back_populates="employee_salary"
+        "PayrollRecord", back_populates="employee_salary", init=False
     )
 
 
 class PayrollRecord(BaseModel):
-    """
-    Individual payroll record for a specific pay period
-    Generated for each employee each pay period
-    """
-
     __tablename__ = "payroll_records"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid4())
-    )
+    # Required fields first (no defaults)
     employee_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     employee_salary_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("employee_salaries.id"), nullable=False
     )
-
-    # Pay period
     pay_period_start: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     pay_period_end: Mapped[date] = mapped_column(Date, nullable=False, index=True)
-
-    # Salary calculations
     gross_salary: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
-    total_deductions: Mapped[float] = mapped_column(Numeric(12, 2), default=0)
     net_salary: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
 
-    # Payment details
-    payment_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    payment_method: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    payment_reference: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    # Optional / defaulted fields after
+    total_deductions: Mapped[float] = mapped_column(Numeric(12, 2), default=0)
+    payment_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True, default=None)
+    payment_method: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
+    payment_reference: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default=None)
     payment_status: Mapped[PaymentStatus] = mapped_column(
         Enum(PaymentStatus), default=PaymentStatus.PENDING
     )
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default=None)
 
-    # Notes
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-
-    # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-
-    # Relationships
     employee_salary: Mapped["EmployeeSalary"] = relationship(
-        "EmployeeSalary", back_populates="payroll_records"
+        "EmployeeSalary", back_populates="payroll_records", init=False
     )
     salary_components: Mapped[List["SalaryComponent"]] = relationship(
-        "SalaryComponent", back_populates="payroll_record", cascade="all, delete-orphan"
+        "SalaryComponent", back_populates="payroll_record", cascade="all, delete-orphan", init=False
     )
 
 
 class SalaryComponent(BaseModel):
-    """
-    Individual components that make up the total payroll
-    Examples: Basic salary, bonus, tax, insurance deduction
-    """
-
     __tablename__ = "salary_components"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid4())
-    )
+    # Required fields first (no defaults)
     payroll_record_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("payroll_records.id"), nullable=False
     )
-
     component_type: Mapped[SalaryComponentType] = mapped_column(
         Enum(SalaryComponentType), nullable=False
     )
     amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
-    # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    # Optional / defaulted fields after
+    description: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None)
 
-    # Relationships
     payroll_record: Mapped["PayrollRecord"] = relationship(
-        "PayrollRecord", back_populates="salary_components"
+        "PayrollRecord", back_populates="salary_components", init=False
     )
