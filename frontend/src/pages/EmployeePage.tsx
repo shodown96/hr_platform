@@ -223,7 +223,7 @@ function OnboardTab({
       <div className="section">
         <h2>Onboarding</h2>
         <p className="msg-ok">
-          You are onboarded as <strong>{profile.employee_code}</strong> — status:{' '}
+          You are onboarded as <strong>{profile.employee_code}</strong> - status:{' '}
           <span className={`badge ${profile.employment_status}`}>{profile.employment_status}</span>
         </p>
       </div>
